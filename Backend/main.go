@@ -7,6 +7,7 @@ import (
 
 	"hospos-backend/internal/bookings"
 	"hospos-backend/internal/customers"
+	"hospos-backend/internal/dbinit"
 	"hospos-backend/internal/discounts"
 	"hospos-backend/internal/inventory"
 	"hospos-backend/internal/locations"
@@ -50,6 +51,20 @@ func main() {
 	mux.HandleFunc("/api/sync", sync.SyncHandler)
 	// Reservation reminders
 	mux.HandleFunc("/api/reminders", reminders.RemindersHandler)
+	// DB initialization
+	mux.HandleFunc("/api/dbinit", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		err := dbinit.InitDB()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"db init failed"}`))
+			return
+		}
+		w.Write([]byte(`{"status":"db initialized"}`))
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {

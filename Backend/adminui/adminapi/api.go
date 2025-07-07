@@ -61,3 +61,15 @@ func CheckAPIStatus() bool {
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
 }
+
+func InitDB() error {
+	resp, err := http.Post(apiBaseURL()+"/dbinit", "application/json", nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("failed to init db: " + resp.Status)
+	}
+	return nil
+}

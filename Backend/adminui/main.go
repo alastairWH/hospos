@@ -28,7 +28,6 @@ func main() {
 			if online {
 				status = "Online"
 			}
-			fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "Status", Content: "Server status: " + status})
 			statusLabel.SetText("Server status: " + status)
 			time.Sleep(3 * time.Second)
 		}
@@ -96,10 +95,20 @@ func main() {
 				}
 			}, w)
 	})
+	dbInitBtn := widget.NewButton("Init DB", func() {
+		go func() {
+			err := adminapi.InitDB()
+			if err != nil {
+				dialog.ShowError(err, w)
+			} else {
+				dialog.ShowInformation("DB Init", "Database initialized successfully!", w)
+			}
+		}()
+	})
 
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("HOSPOS Backend Admin UI (Fyne)"),
-		container.NewHBox(startBtn, stopBtn, statusLabel),
+		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn),
 		widget.NewSeparator(),
 		widget.NewLabel("User Management"),
 		container.NewHBox(refreshBtn, addUserBtn),

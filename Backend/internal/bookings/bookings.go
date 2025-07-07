@@ -20,8 +20,6 @@ type Booking struct {
 	Time     string             `json:"time" bson:"time"`
 }
 
-// No in-memory bookings; use MongoDB
-
 func BookingsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
