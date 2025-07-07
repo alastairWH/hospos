@@ -2,6 +2,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setAuth } from "../auth";
+import Input from "../ui/Input";
+import Button from "../ui/Button";
+import Alert from "../ui/Alert";
 
 export default function LoginPage() {
   const [name, setName] = useState("");
@@ -41,32 +44,26 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
       <form
-        className="bg-white dark:bg-gray-800 p-8 rounded shadow-md w-full max-w-sm flex flex-col gap-4"
+        className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-sm flex flex-col gap-4 border border-gray-100 dark:border-gray-700"
         onSubmit={handleSubmit}
       >
-        <h1 className="text-2xl font-bold mb-2 text-center">Login</h1>
-        <input
+        <h1 className="text-3xl font-bold mb-2 text-center">Login</h1>
+        <Input
           type="text"
           placeholder="Name"
           value={name}
           onChange={e => setName(e.target.value)}
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoFocus
         />
-        <input
+        <Input
           type="password"
           placeholder="PIN (3-6 digits)"
           value={pin}
           onChange={e => setPin(e.target.value)}
-          className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           maxLength={6}
         />
-        {error && <div className="text-red-600 text-sm">{error}</div>}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition"
-        >
-          Sign In
-        </button>
+        {error && <Alert type="error">{error}</Alert>}
+        <Button type="submit">Sign In</Button>
       </form>
     </div>
   );
