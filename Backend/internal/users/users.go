@@ -139,20 +139,63 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("encode error: %v", err)
 		}
 	default:
-		// Support DELETE /api/users/{id}
-		if r.Method == http.MethodDelete {
-			// Expect URL: /api/users/{id}
-			// Extract id from URL
-			id := ""
-			parts := splitPath(r.URL.Path)
-			if len(parts) >= 3 && parts[2] != "" {
-				id = parts[2]
+		// Support /api/users/{id}/pin (PUT) and /api/users/{id} (DELETE)
+		parts := splitPath(r.URL.Path)
+		if len(parts) >= 4 && parts[3] == "pin" && r.Method == http.MethodPut {
+			// Handle PIN update
+			id := parts[2]
+			var req struct {
+				Pin string `json:"pin"`
 			}
-			if id == "" {
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(`{"error":"missing user id"}`))
+				w.Write([]byte(`{"error":"invalid input"}`))
 				return
 			}
+			if len(req.Pin) < 3 || len(req.Pin) > 6 {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
+				return
+			}
+			for _, c := range req.Pin {
+				if c < '0' || c > '9' {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte(`{"error":"pin must be digits only"}`))
+					return
+				}
+			}
+			coll, err := db.GetCollection("users")
+			if err != nil {
+				log.Printf("db error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"db error"}`))
+				return
+			}
+			objID, err := primitive.ObjectIDFromHex(id)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"invalid user id"}`))
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+			defer cancel()
+			res, err := coll.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": bson.M{"pin": req.Pin}})
+			if err != nil {
+				log.Printf("update pin error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"db error"}`))
+				return
+			}
+			if res.MatchedCount == 0 {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte(`{"error":"user not found"}`))
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		} else if len(parts) >= 3 && parts[2] != "" && r.Method == http.MethodDelete {
+			// Handle user delete
+			id := parts[2]
 			coll, err := db.GetCollection("users")
 			if err != nil {
 				log.Printf("db error: %v", err)

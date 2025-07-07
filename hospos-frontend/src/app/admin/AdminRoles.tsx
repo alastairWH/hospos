@@ -50,31 +50,25 @@ export default function AdminRoles({ onRolesChanged }: { onRolesChanged?: () => 
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold">Roles</h2>
-        <button className="bg-blue-600 text-white px-3 py-1 rounded" onClick={() => setShowAdd(true)}>Add Role</button>
+    <div className="max-w-xl mx-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Roles</h2>
+        <button className="bg-blue-600 hover:bg-blue-700 transition text-white px-4 py-2 rounded-lg shadow" onClick={() => setShowAdd(true)}>Add Role</button>
       </div>
-      {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
-      {loading ? <p>Loading...</p> : (
-        <table className="min-w-full bg-white dark:bg-gray-800 rounded shadow text-sm">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 text-left">Role</th>
-              <th className="py-2 px-4 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roles.map((r) => (
-              <tr key={r}>
-                <td className="py-2 px-4">{r}</td>
-                <td className="py-2 px-4">
-                  <button className="text-red-600 underline" onClick={() => handleDeleteRole(r)}>Remove</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {error && <div className="text-red-600 text-sm mb-2 rounded bg-red-50 p-2 border border-red-200">{error}</div>}
+      {loading ? (
+        <div className="flex justify-center items-center h-24">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {roles.map((r) => (
+            <div key={r} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex items-center justify-between border border-gray-100 dark:border-gray-700">
+              <span className="font-semibold text-lg text-gray-800 dark:text-gray-100">{r}</span>
+              <button className="text-red-600 hover:underline" onClick={() => handleDeleteRole(r)}>Remove</button>
+            </div>
+          ))}
+        </div>
       )}
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
