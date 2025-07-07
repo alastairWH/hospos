@@ -1,6 +1,25 @@
-
 package main
 
+import (
+	   "log"
+	   "net/http"
+	   "os"
+	   "hospos-backend/internal/bookings"
+	   "hospos-backend/internal/customers"
+	   "hospos-backend/internal/dbinit"
+	   "hospos-backend/internal/discounts"
+	   "hospos-backend/internal/inventory"
+	   "hospos-backend/internal/locations"
+	   "hospos-backend/internal/payments"
+	   "hospos-backend/internal/products"
+	   "hospos-backend/internal/receipts"
+	   "hospos-backend/internal/reminders"
+	   "hospos-backend/internal/reports"
+	   "hospos-backend/internal/roles"
+	   "hospos-backend/internal/sales"
+	   "hospos-backend/internal/sync"
+	   "hospos-backend/internal/users"
+)
 
 // CORS middleware
 func withCORS(h http.HandlerFunc) http.HandlerFunc {
@@ -15,28 +34,6 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 			   h(w, r)
 	   }
 }
-
-import (
-	"log"
-	"net/http"
-	"os"
-
-	"hospos-backend/internal/bookings"
-	"hospos-backend/internal/customers"
-	"hospos-backend/internal/dbinit"
-	"hospos-backend/internal/discounts"
-	"hospos-backend/internal/inventory"
-	"hospos-backend/internal/locations"
-	"hospos-backend/internal/payments"
-	"hospos-backend/internal/products"
-	"hospos-backend/internal/receipts"
-	"hospos-backend/internal/reminders"
-	"hospos-backend/internal/reports"
-	"hospos-backend/internal/roles"
-	"hospos-backend/internal/sales"
-	"hospos-backend/internal/sync"
-	"hospos-backend/internal/users"
-)
 
 func main() {
 	mux := http.NewServeMux()
