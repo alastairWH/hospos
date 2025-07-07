@@ -11,6 +11,7 @@ import (
 type User struct {
 	Name string `json:"name"`
 	Role string `json:"role"`
+	Pin  string `json:"pin"`
 }
 
 type Role struct {

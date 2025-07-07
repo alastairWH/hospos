@@ -77,8 +77,9 @@ func main() {
 	})
 	addUserBtn := widget.NewButton("Add User", func() {
 		nameEntry := widget.NewEntry()
+		pinEntry := widget.NewEntry()
+		pinEntry.SetPlaceHolder("3-6 digit PIN")
 		roleSelect := widget.NewSelect([]string{}, nil)
-		// No SetPlaceHolder for Select in Fyne v2; skip this line
 		go func() {
 			roles, err := adminapi.GetRoles()
 			if err == nil {
@@ -93,12 +94,13 @@ func main() {
 		dialog.ShowForm("Add User", "Add", "Cancel",
 			[]*widget.FormItem{
 				widget.NewFormItem("Name", nameEntry),
+				widget.NewFormItem("PIN", pinEntry),
 				widget.NewFormItem("Role", roleSelect),
 			},
 			func(ok bool) {
 				if ok {
 					go func() {
-						err := adminapi.AddUser(adminapi.User{Name: nameEntry.Text, Role: roleSelect.Selected})
+						err := adminapi.AddUser(adminapi.User{Name: nameEntry.Text, Pin: pinEntry.Text, Role: roleSelect.Selected})
 						if err != nil {
 							dialog.ShowError(err, w)
 						} else {
