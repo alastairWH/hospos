@@ -1,17 +1,18 @@
 package users
 
 import (
-	   "context"
-	   "encoding/json"
-	   "log"
-	   "net/http"
-	   "time"
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
 
-	   "golang.org/x/crypto/bcrypt"
-	   "hospos-backend/internal/db"
+	"hospos-backend/internal/db"
 
-	   "go.mongodb.org/mongo-driver/bson"
-	   "go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // AuthHandler handles POST /api/auth for PIN-based login
@@ -29,40 +30,40 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"error":"invalid input"}`))
 		return
 	}
-	   coll, err := db.GetCollection("users")
-	   if err != nil {
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"db error"}`))
-			   return
-	   }
-	   ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	   defer cancel()
-	   var user User
-	   err = coll.FindOne(ctx, bson.M{"name": req.Name}).Decode(&user)
-	   if err != nil {
-			   w.WriteHeader(http.StatusUnauthorized)
-			   w.Write([]byte(`{"error":"invalid credentials"}`))
-			   return
-	   }
-	   // Compare hashed PIN
-	   if bcrypt.CompareHashAndPassword([]byte(user.Pin), []byte(req.Pin)) != nil {
-			   w.WriteHeader(http.StatusUnauthorized)
-			   w.Write([]byte(`{"error":"invalid credentials"}`))
-			   return
-	   }
-	   resp := struct {
-			   ID    string `json:"id"`
-			   Name  string `json:"name"`
-			   Role  string `json:"role"`
-			   Token string `json:"token"`
-	   }{
-			   ID:    user.ID,
-			   Name:  user.Name,
-			   Role:  user.Role,
-			   Token: user.ID + ":" + user.Role, // placeholder token
-	   }
-	   w.Header().Set("Content-Type", "application/json")
-	   json.NewEncoder(w).Encode(resp)
+	coll, err := db.GetCollection("users")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"db error"}`))
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	var user User
+	err = coll.FindOne(ctx, bson.M{"name": req.Name}).Decode(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"invalid credentials"}`))
+		return
+	}
+	// Compare hashed PIN
+	if bcrypt.CompareHashAndPassword([]byte(user.Pin), []byte(req.Pin)) != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"invalid credentials"}`))
+		return
+	}
+	resp := struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Role  string `json:"role"`
+		Token string `json:"token"`
+	}{
+		ID:    user.ID,
+		Name:  user.Name,
+		Role:  user.Role,
+		Token: user.ID + ":" + user.Role, // placeholder token
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 type User struct {
@@ -110,112 +111,112 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error":"invalid input"}`))
 			return
 		}
-	   // Validate pin: must be 3-6 digits
-	   if len(u.Pin) < 3 || len(u.Pin) > 6 {
-			   w.WriteHeader(http.StatusBadRequest)
-			   w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
-			   return
-	   }
-	   for _, c := range u.Pin {
-			   if c < '0' || c > '9' {
-					   w.WriteHeader(http.StatusBadRequest)
-					   w.Write([]byte(`{"error":"pin must be digits only"}`))
-					   return
-			   }
-	   }
-	   // Hash the PIN
-	   hashedPin, err := bcrypt.GenerateFromPassword([]byte(u.Pin), bcrypt.DefaultCost)
-	   if err != nil {
-			   log.Printf("bcrypt error: %v", err)
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"hash error"}`))
-			   return
-	   }
-	   u.Pin = string(hashedPin)
-	   coll, err := db.GetCollection("users")
-	   if err != nil {
-			   log.Printf("db error: %v", err)
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"db error"}`))
-			   return
-	   }
-	   ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	   defer cancel()
-	   res, err := coll.InsertOne(ctx, u)
-	   if err != nil {
-			   log.Printf("insert error: %v", err)
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"db error"}`))
-			   return
-	   }
-	   u.ID = res.InsertedID.(primitive.ObjectID).Hex()
-	   w.WriteHeader(http.StatusCreated)
-	   if err := json.NewEncoder(w).Encode(u); err != nil {
-			   log.Printf("encode error: %v", err)
-	   }
+		// Validate pin: must be 3-6 digits
+		if len(u.Pin) < 3 || len(u.Pin) > 6 {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
+			return
+		}
+		for _, c := range u.Pin {
+			if c < '0' || c > '9' {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"pin must be digits only"}`))
+				return
+			}
+		}
+		// Hash the PIN
+		hashedPin, err := bcrypt.GenerateFromPassword([]byte(u.Pin), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("bcrypt error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"hash error"}`))
+			return
+		}
+		u.Pin = string(hashedPin)
+		coll, err := db.GetCollection("users")
+		if err != nil {
+			log.Printf("db error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"db error"}`))
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+		res, err := coll.InsertOne(ctx, u)
+		if err != nil {
+			log.Printf("insert error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"db error"}`))
+			return
+		}
+		u.ID = res.InsertedID.(primitive.ObjectID).Hex()
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(u); err != nil {
+			log.Printf("encode error: %v", err)
+		}
 	default:
 		// Support /api/users/{id}/pin (PUT) and /api/users/{id} (DELETE)
 		parts := splitPath(r.URL.Path)
-	   if len(parts) >= 4 && parts[3] == "pin" && r.Method == http.MethodPut {
-		   // Handle PIN update
-		   id := parts[2]
-		   var req struct {
-			   Pin string `json:"pin"`
-		   }
-		   if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			   w.WriteHeader(http.StatusBadRequest)
-			   w.Write([]byte(`{"error":"invalid input"}`))
-			   return
-		   }
-		   if len(req.Pin) < 3 || len(req.Pin) > 6 {
-			   w.WriteHeader(http.StatusBadRequest)
-			   w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
-			   return
-		   }
-		   for _, c := range req.Pin {
-			   if c < '0' || c > '9' {
-				   w.WriteHeader(http.StatusBadRequest)
-				   w.Write([]byte(`{"error":"pin must be digits only"}`))
-				   return
-			   }
-		   }
-		   // Hash the new PIN
-		   hashedPin, err := bcrypt.GenerateFromPassword([]byte(req.Pin), bcrypt.DefaultCost)
-		   if err != nil {
-			   log.Printf("bcrypt error: %v", err)
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"hash error"}`))
-			   return
-		   }
-		   coll, err := db.GetCollection("users")
-		   if err != nil {
-			   log.Printf("db error: %v", err)
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"db error"}`))
-			   return
-		   }
-		   objID, err := primitive.ObjectIDFromHex(id)
-		   if err != nil {
-			   w.WriteHeader(http.StatusBadRequest)
-			   w.Write([]byte(`{"error":"invalid user id"}`))
-			   return
-		   }
-		   ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		   defer cancel()
-		   res, err := coll.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": bson.M{"pin": string(hashedPin)}})
-		   if err != nil {
-			   log.Printf("update pin error: %v", err)
-			   w.WriteHeader(http.StatusInternalServerError)
-			   w.Write([]byte(`{"error":"db error"}`))
-			   return
-		   }
-		   if res.MatchedCount == 0 {
-			   w.WriteHeader(http.StatusNotFound)
-			   w.Write([]byte(`{"error":"user not found"}`))
-			   return
-		   }
-		   w.WriteHeader(http.StatusNoContent)
-		   return
+		if len(parts) >= 4 && parts[3] == "pin" && r.Method == http.MethodPut {
+			// Handle PIN update
+			id := parts[2]
+			var req struct {
+				Pin string `json:"pin"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"invalid input"}`))
+				return
+			}
+			if len(req.Pin) < 3 || len(req.Pin) > 6 {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
+				return
+			}
+			for _, c := range req.Pin {
+				if c < '0' || c > '9' {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte(`{"error":"pin must be digits only"}`))
+					return
+				}
+			}
+			// Hash the new PIN
+			hashedPin, err := bcrypt.GenerateFromPassword([]byte(req.Pin), bcrypt.DefaultCost)
+			if err != nil {
+				log.Printf("bcrypt error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"hash error"}`))
+				return
+			}
+			coll, err := db.GetCollection("users")
+			if err != nil {
+				log.Printf("db error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"db error"}`))
+				return
+			}
+			objID, err := primitive.ObjectIDFromHex(id)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"invalid user id"}`))
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+			defer cancel()
+			res, err := coll.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": bson.M{"pin": string(hashedPin)}})
+			if err != nil {
+				log.Printf("update pin error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"db error"}`))
+				return
+			}
+			if res.MatchedCount == 0 {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte(`{"error":"user not found"}`))
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
 		} else if len(parts) >= 3 && parts[2] != "" && r.Method == http.MethodDelete {
 			// Handle user delete
 			id := parts[2]
