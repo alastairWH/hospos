@@ -1,0 +1,63 @@
+package adminapi
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"os"
+)
+
+type User struct {
+	Name string `json:"name"`
+	Role string `json:"role"`
+}
+
+func apiBaseURL() string {
+	url := os.Getenv("HOSPOS_API_URL")
+	if url == "" {
+		url = "http://localhost:8080/api"
+	}
+	return url
+}
+
+func AddUser(u User) error {
+	b, err := json.Marshal(u)
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(apiBaseURL()+"/users", "application/json", bytes.NewReader(b))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		return errors.New("failed to add user: " + resp.Status)
+	}
+	return nil
+}
+
+func GetUsers() ([]User, error) {
+	resp, err := http.Get(apiBaseURL() + "/users")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("failed to get users: " + resp.Status)
+	}
+	var users []User
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func CheckAPIStatus() bool {
+	resp, err := http.Get(apiBaseURL() + "/users")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
