@@ -13,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// ...existing code...
-
 // AuthHandler handles POST /api/auth for PIN-based login
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -141,6 +139,68 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("encode error: %v", err)
 		}
 	default:
+		// Support DELETE /api/users/{id}
+		if r.Method == http.MethodDelete {
+			// Expect URL: /api/users/{id}
+			// Extract id from URL
+			id := ""
+			parts := splitPath(r.URL.Path)
+			if len(parts) >= 3 && parts[2] != "" {
+				id = parts[2]
+			}
+			if id == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"missing user id"}`))
+				return
+			}
+			coll, err := db.GetCollection("users")
+			if err != nil {
+				log.Printf("db error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"db error"}`))
+				return
+			}
+			objID, err := primitive.ObjectIDFromHex(id)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"invalid user id"}`))
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+			defer cancel()
+			res, err := coll.DeleteOne(ctx, bson.M{"_id": objID})
+			if err != nil {
+				log.Printf("delete error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error":"db error"}`))
+				return
+			}
+			if res.DeletedCount == 0 {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte(`{"error":"user not found"}`))
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+// splitPath splits a URL path into its segments, ignoring leading/trailing slashes.
+func splitPath(path string) []string {
+	var segs []string
+	start := 0
+	for i := 0; i < len(path); i++ {
+		if path[i] == '/' {
+			if i > start {
+				segs = append(segs, path[start:i])
+			}
+			start = i + 1
+		}
+	}
+	if start < len(path) {
+		segs = append(segs, path[start:])
+	}
+	return segs
 }

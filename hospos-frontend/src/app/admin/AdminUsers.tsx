@@ -42,20 +42,41 @@ export default function AdminUsers({ roles }: { roles: string[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newUser),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error();
+      .then(async (res) => {
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Add user error:", errText);
+          throw new Error(errText);
+        }
         setShowAdd(false);
         setNewUser({ name: "", pin: "", role: roles[0] || "" });
         fetchUsers();
       })
-      .catch(() => setError("Failed to add user"));
+      .catch((err) => {
+        setError("Failed to add user");
+        if (err instanceof Error) console.error("Add user exception:", err.message);
+      });
   }
 
-  function handleDeleteUser(id: string) {
-    fetch(`http://localhost:8080/api/users/${id}`, { method: "DELETE" })
-      .then(() => fetchUsers())
-      .catch(() => setError("Failed to delete user"));
+function handleDeleteUser(id: string, name: string) {
+  if (!window.confirm(`Are you sure you want to delete user '${name}'? This action cannot be undone.`)) {
+    return;
   }
+  fetch(`http://localhost:8080/api/users/${id}`, { method: "DELETE" })
+    .then(async (res) => {
+      if (!res.ok) {
+        const errText = await res.text();
+        setError("Failed to delete user");
+        console.error("Delete user error:", errText);
+        return;
+      }
+      fetchUsers();
+    })
+    .catch((err) => {
+      setError("Failed to delete user");
+      if (err instanceof Error) console.error("Delete user exception:", err.message);
+    });
+}
 
   function handleResetPin(id: string, pin: string) {
     if (pin.length < 3 || pin.length > 6 || !/^[0-9]+$/.test(pin)) {
@@ -120,7 +141,7 @@ export default function AdminUsers({ roles }: { roles: string[] }) {
                 </td>
                 <td className="py-2 px-4 flex gap-2">
                   <button className="text-blue-600 underline" onClick={() => setShowReset(u.id)}>Reset PIN</button>
-                  <button className="text-red-600 underline" onClick={() => handleDeleteUser(u.id)}>Remove</button>
+                  <button className="text-red-600 underline" onClick={() => handleDeleteUser(u.id, u.name)}>Remove</button>
                 </td>
               </tr>
             ))}

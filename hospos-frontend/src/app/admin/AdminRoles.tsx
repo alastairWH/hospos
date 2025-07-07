@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-export default function AdminRoles() {
+export default function AdminRoles({ onRolesChanged }: { onRolesChanged?: () => void }) {
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,13 +35,17 @@ export default function AdminRoles() {
         setShowAdd(false);
         setNewRole("");
         fetchRoles();
+        if (onRolesChanged) onRolesChanged();
       })
       .catch(() => setError("Failed to add role"));
   }
 
   function handleDeleteRole(role: string) {
     fetch(`http://localhost:8080/api/roles/${role}`, { method: "DELETE" })
-      .then(() => fetchRoles())
+      .then(() => {
+        fetchRoles();
+        if (onRolesChanged) onRolesChanged();
+      })
       .catch(() => setError("Failed to delete role"));
   }
 

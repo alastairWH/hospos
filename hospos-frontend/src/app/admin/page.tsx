@@ -6,11 +6,16 @@ import AdminRoles from "./AdminRoles";
 
 export default function AdminPage() {
   const [roles, setRoles] = useState<string[]>([]);
-  useEffect(() => {
+
+  // Fetch roles from API
+  const fetchRoles = () => {
     fetch("http://localhost:8080/api/roles")
       .then((res) => res.json())
       .then((data) => setRoles(data.map((r: any) => r.role)));
-  }, []);
+  };
+
+  useEffect(() => { fetchRoles(); }, []);
+
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
       <div className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
@@ -20,7 +25,7 @@ export default function AdminPage() {
             <AdminUsers roles={roles} />
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
-            <AdminRoles />
+            <AdminRoles onRolesChanged={fetchRoles} />
           </div>
         </div>
       </div>

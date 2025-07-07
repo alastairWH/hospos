@@ -21,6 +21,20 @@ import (
 	"os"
 )
 
+// Logging and error handling middleware
+func withLoggingAndRecovery(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("[PANIC] %s %s: %v", r.Method, r.URL.Path, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+		}()
+		log.Printf("[API] %s %s", r.Method, r.URL.Path)
+		h(w, r)
+	}
+}
+
 // CORS middleware
 func withCORS(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -39,50 +53,53 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Product management
-	mux.HandleFunc("/api/products", withCORS(products.ProductsHandler))
-	mux.HandleFunc("/api/products/", withCORS(products.ProductByIDHandler))
+	mux.HandleFunc("/api/products", withLoggingAndRecovery(withCORS(products.ProductsHandler)))
+	mux.HandleFunc("/api/products/", withLoggingAndRecovery(withCORS(products.ProductByIDHandler)))
 	// Sales
-	mux.HandleFunc("/api/sales", withCORS(sales.SalesHandler))
+	mux.HandleFunc("/api/sales", withLoggingAndRecovery(withCORS(sales.SalesHandler)))
 	// Table bookings
-	mux.HandleFunc("/api/bookings", withCORS(bookings.BookingsHandler))
+	mux.HandleFunc("/api/bookings", withLoggingAndRecovery(withCORS(bookings.BookingsHandler)))
 	// Inventory
-	mux.HandleFunc("/api/inventory", withCORS(inventory.InventoryHandler))
+	mux.HandleFunc("/api/inventory", withLoggingAndRecovery(withCORS(inventory.InventoryHandler)))
 	// Users
-	mux.HandleFunc("/api/users", withCORS(users.UsersHandler))
+	mux.HandleFunc("/api/users", withLoggingAndRecovery(withCORS(users.UsersHandler)))
+	mux.HandleFunc("/api/users/", withLoggingAndRecovery(withCORS(users.UsersHandler)))
 	// Auth
-	mux.HandleFunc("/api/auth", withCORS(users.AuthHandler))
+	mux.HandleFunc("/api/auth", withLoggingAndRecovery(withCORS(users.AuthHandler)))
 	// Roles
-	mux.HandleFunc("/api/roles", withCORS(roles.RolesHandler))
+	mux.HandleFunc("/api/roles", withLoggingAndRecovery(withCORS(roles.RolesHandler)))
 	// Reports
-	mux.HandleFunc("/api/reports", withCORS(reports.ReportsHandler))
+	mux.HandleFunc("/api/reports", withLoggingAndRecovery(withCORS(reports.ReportsHandler)))
 	// Customers
-	mux.HandleFunc("/api/customers", withCORS(customers.CustomersHandler))
+	mux.HandleFunc("/api/customers", withLoggingAndRecovery(withCORS(customers.CustomersHandler)))
 	// Payments
-	mux.HandleFunc("/api/payments", withCORS(payments.PaymentsHandler))
+	mux.HandleFunc("/api/payments", withLoggingAndRecovery(withCORS(payments.PaymentsHandler)))
 	// Receipts
-	mux.HandleFunc("/api/receipts", withCORS(receipts.ReceiptsHandler))
+	mux.HandleFunc("/api/receipts", withLoggingAndRecovery(withCORS(receipts.ReceiptsHandler)))
 	// Discounts
-	mux.HandleFunc("/api/discounts", withCORS(discounts.DiscountsHandler))
+	mux.HandleFunc("/api/discounts", withLoggingAndRecovery(withCORS(discounts.DiscountsHandler)))
 	// Locations
-	mux.HandleFunc("/api/locations", withCORS(locations.LocationsHandler))
+	mux.HandleFunc("/api/locations", withLoggingAndRecovery(withCORS(locations.LocationsHandler)))
 	// Offline sync
-	mux.HandleFunc("/api/sync", withCORS(sync.SyncHandler))
+	mux.HandleFunc("/api/sync", withLoggingAndRecovery(withCORS(sync.SyncHandler)))
 	// Reservation reminders
-	mux.HandleFunc("/api/reminders", withCORS(reminders.RemindersHandler))
+	mux.HandleFunc("/api/reminders", withLoggingAndRecovery(withCORS(reminders.RemindersHandler)))
 	// DB initialization
-	mux.HandleFunc("/api/dbinit", withCORS(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/dbinit", withLoggingAndRecovery(withCORS(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
+			log.Printf("[ERROR] %s %s: Method not allowed", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 		err := dbinit.InitDB()
 		if err != nil {
+			log.Printf("[ERROR] %s %s: db init failed: %v", r.Method, r.URL.Path, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"error":"db init failed"}`))
 			return
 		}
 		w.Write([]byte(`{"status":"db initialized"}`))
-	}))
+	})))
 
 	port := os.Getenv("PORT")
 	if port == "" {
