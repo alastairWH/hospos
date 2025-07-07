@@ -1,4 +1,4 @@
-package users
+package roles
 
 import (
 	"context"
@@ -13,16 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type User struct {
-	ID   string `json:"id" bson:"_id,omitempty"`
-	Name string `json:"name" bson:"name"`
-	Role string `json:"role" bson:"role"`
+type Role struct {
+	ID   primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Role string             `json:"role" bson:"role"`
 }
 
-func UsersHandler(w http.ResponseWriter, r *http.Request) {
+func RolesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		coll, err := db.GetCollection("users")
+		coll, err := db.GetCollection("roles")
 		if err != nil {
 			log.Printf("db error: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -39,25 +38,25 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer cur.Close(ctx)
-		var users []User
-		if err := cur.All(ctx, &users); err != nil {
+		var roles []Role
+		if err := cur.All(ctx, &roles); err != nil {
 			log.Printf("decode error: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"error":"db error"}`))
 			return
 		}
-		if err := json.NewEncoder(w).Encode(users); err != nil {
+		if err := json.NewEncoder(w).Encode(roles); err != nil {
 			log.Printf("encode error: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	case http.MethodPost:
-		var u User
-		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		var role Role
+		if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{"error":"invalid input"}`))
 			return
 		}
-		coll, err := db.GetCollection("users")
+		coll, err := db.GetCollection("roles")
 		if err != nil {
 			log.Printf("db error: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -66,16 +65,16 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-		res, err := coll.InsertOne(ctx, u)
+		res, err := coll.InsertOne(ctx, role)
 		if err != nil {
 			log.Printf("insert error: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"error":"db error"}`))
 			return
 		}
-		u.ID = res.InsertedID.(primitive.ObjectID).Hex()
+		role.ID = res.InsertedID.(primitive.ObjectID)
 		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(u); err != nil {
+		if err := json.NewEncoder(w).Encode(role); err != nil {
 			log.Printf("encode error: %v", err)
 		}
 	default:

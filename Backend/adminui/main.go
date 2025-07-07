@@ -58,6 +58,7 @@ func main() {
 		}
 	})
 
+	// User management UI
 	userList := widget.NewMultiLineEntry()
 	userList.SetPlaceHolder("Users will be listed here...")
 	refreshBtn := widget.NewButton("Refresh Users", func() {
@@ -76,16 +77,28 @@ func main() {
 	})
 	addUserBtn := widget.NewButton("Add User", func() {
 		nameEntry := widget.NewEntry()
-		roleEntry := widget.NewEntry()
+		roleSelect := widget.NewSelect([]string{}, nil)
+		// No SetPlaceHolder for Select in Fyne v2; skip this line
+		go func() {
+			roles, err := adminapi.GetRoles()
+			if err == nil {
+				var roleNames []string
+				for _, r := range roles {
+					roleNames = append(roleNames, r.Role)
+				}
+				roleSelect.Options = roleNames
+				roleSelect.Refresh()
+			}
+		}()
 		dialog.ShowForm("Add User", "Add", "Cancel",
 			[]*widget.FormItem{
 				widget.NewFormItem("Name", nameEntry),
-				widget.NewFormItem("Role", roleEntry),
+				widget.NewFormItem("Role", roleSelect),
 			},
 			func(ok bool) {
 				if ok {
 					go func() {
-						err := adminapi.AddUser(adminapi.User{Name: nameEntry.Text, Role: roleEntry.Text})
+						err := adminapi.AddUser(adminapi.User{Name: nameEntry.Text, Role: roleSelect.Selected})
 						if err != nil {
 							dialog.ShowError(err, w)
 						} else {
@@ -106,6 +119,43 @@ func main() {
 		}()
 	})
 
+	// Role management UI
+	roleList := widget.NewMultiLineEntry()
+	roleList.SetPlaceHolder("Roles will be listed here...")
+	refreshRolesBtn := widget.NewButton("Refresh Roles", func() {
+		go func() {
+			roles, err := adminapi.GetRoles()
+			if err != nil {
+				roleList.SetText("Error: " + err.Error())
+				return
+			}
+			var lines string
+			for _, r := range roles {
+				lines += r.Role + "\n"
+			}
+			roleList.SetText(lines)
+		}()
+	})
+	addRoleBtn := widget.NewButton("Add Role", func() {
+		roleEntry := widget.NewEntry()
+		dialog.ShowForm("Add Role", "Add", "Cancel",
+			[]*widget.FormItem{
+				widget.NewFormItem("Role", roleEntry),
+			},
+			func(ok bool) {
+				if ok {
+					go func() {
+						err := adminapi.AddRole(roleEntry.Text)
+						if err != nil {
+							dialog.ShowError(err, w)
+						} else {
+							refreshRolesBtn.OnTapped()
+						}
+					}()
+				}
+			}, w)
+	})
+
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("HOSPOS Backend Admin UI (Fyne)"),
 		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn),
@@ -113,6 +163,10 @@ func main() {
 		widget.NewLabel("User Management"),
 		container.NewHBox(refreshBtn, addUserBtn),
 		userList,
+		widget.NewSeparator(),
+		widget.NewLabel("Role Management"),
+		container.NewHBox(refreshRolesBtn, addRoleBtn),
+		roleList,
 	))
 	w.Resize(fyne.NewSize(500, 400))
 	w.ShowAndRun()

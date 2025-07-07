@@ -16,6 +16,7 @@ import (
 	"hospos-backend/internal/receipts"
 	"hospos-backend/internal/reminders"
 	"hospos-backend/internal/reports"
+	"hospos-backend/internal/roles"
 	"hospos-backend/internal/sales"
 	"hospos-backend/internal/sync"
 	"hospos-backend/internal/users"
@@ -35,6 +36,8 @@ func main() {
 	mux.HandleFunc("/api/inventory", inventory.InventoryHandler)
 	// Users
 	mux.HandleFunc("/api/users", users.UsersHandler)
+	// Roles
+	mux.HandleFunc("/api/roles", roles.RolesHandler)
 	// Reports
 	mux.HandleFunc("/api/reports", reports.ReportsHandler)
 	// Customers
