@@ -6,6 +6,7 @@ import (
 	"hospos-backend/internal/dbinit"
 	"hospos-backend/internal/discounts"
 	"hospos-backend/internal/inventory"
+	"hospos-backend/internal/linking"
 	"hospos-backend/internal/locations"
 	"hospos-backend/internal/payments"
 	"hospos-backend/internal/products"
@@ -84,6 +85,8 @@ func main() {
 	mux.HandleFunc("/api/locations", withLoggingAndRecovery(withCORS(locations.LocationsHandler)))
 	// Offline sync
 	mux.HandleFunc("/api/sync", withLoggingAndRecovery(withCORS(sync.SyncHandler)))
+	// Linking (till registration)
+	mux.HandleFunc("/api/linking/link", withLoggingAndRecovery(withCORS(linking.LinkHandler)))
 	// Reservation reminders
 	mux.HandleFunc("/api/reminders", withLoggingAndRecovery(withCORS(reminders.RemindersHandler)))
 	// DB initialization
@@ -111,4 +114,5 @@ func main() {
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+
 }
