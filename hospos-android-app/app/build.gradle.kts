@@ -44,7 +44,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // For Retrofit + JSON
+// For Retrofit + JSON
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
 
