@@ -14,9 +14,10 @@ import (
 )
 
 type Product struct {
-	ID    primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name  string             `json:"name" bson:"name"`
-	Price float64            `json:"price" bson:"price"`
+	   ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	   Name     string             `json:"name" bson:"name"`
+	   Price    float64            `json:"price" bson:"price"`
+	   Category string             `json:"category,omitempty" bson:"category,omitempty"`
 }
 
 // No in-memory products; use MongoDB

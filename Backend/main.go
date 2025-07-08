@@ -57,6 +57,8 @@ func main() {
 	mux.HandleFunc("/api/products/", withLoggingAndRecovery(withCORS(products.ProductByIDHandler)))
 	// Sales
 	mux.HandleFunc("/api/sales", withLoggingAndRecovery(withCORS(sales.SalesHandler)))
+	// Categories
+	mux.HandleFunc("/api/categories", withLoggingAndRecovery(withCORS(products.CategoriesHandler)))
 	// Table bookings
 	mux.HandleFunc("/api/bookings", withLoggingAndRecovery(withCORS(bookings.BookingsHandler)))
 	// Inventory
