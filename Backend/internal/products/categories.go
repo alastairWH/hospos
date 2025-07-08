@@ -39,21 +39,21 @@ func CategoriesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer cur.Close(ctx)
-			   var categories []Category
-			   if err := cur.All(ctx, &categories); err != nil {
-					   log.Printf("decode error: %v", err)
-					   w.WriteHeader(http.StatusInternalServerError)
-					   w.Write([]byte(`{"error":"db error"}`))
-					   return
-			   }
-			   // Always return an array, even if empty
-			   if categories == nil {
-					   categories = []Category{}
-			   }
-			   if err := json.NewEncoder(w).Encode(categories); err != nil {
-					   log.Printf("encode error: %v", err)
-					   w.WriteHeader(http.StatusInternalServerError)
-			   }
+		var categories []Category
+		if err := cur.All(ctx, &categories); err != nil {
+			log.Printf("decode error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"db error"}`))
+			return
+		}
+		// Always return an array, even if empty
+		if categories == nil {
+			categories = []Category{}
+		}
+		if err := json.NewEncoder(w).Encode(categories); err != nil {
+			log.Printf("encode error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	case http.MethodPost:
 		var c Category
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
