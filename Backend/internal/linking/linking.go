@@ -58,7 +58,7 @@ func LinkHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"success":false,"error":"invalid link code"}`))
 		return
 	}
-	// Optionally: mark as linked, store device info, update last seen
+	// mark as linked, store device info, update last seen
 	update := bson.M{"$set": bson.M{"linked": true, "deviceInfo": req.DeviceInfo, "lastSeen": time.Now()}}
 	_, err = coll.UpdateOne(ctx, bson.M{"_id": location["_id"]}, update)
 	if err != nil {
@@ -67,7 +67,7 @@ func LinkHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"success":false,"error":"db error"}`))
 		return
 	}
-	// Gather initial data (example: products, categories, users, roles)
+	// Gather initial data
 	initialData := make(map[string]interface{})
 	initialData["products"] = fetchAll(ctx, "products")
 	initialData["categories"] = fetchAll(ctx, "categories")

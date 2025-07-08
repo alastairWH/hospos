@@ -70,7 +70,7 @@ type User struct {
 	ID   string `json:"id" bson:"_id,omitempty"`
 	Name string `json:"name" bson:"name"`
 	Role string `json:"role" bson:"role"`
-	Pin  string `json:"pin" bson:"pin"` // 3-6 digit pin for login
+	Pin  string `json:"pin" bson:"pin"`
 }
 
 func UsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +117,7 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
 			return
 		}
+		// Validate pin: Must only be Numbers
 		for _, c := range u.Pin {
 			if c < '0' || c > '9' {
 				w.WriteHeader(http.StatusBadRequest)
@@ -168,11 +169,13 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`{"error":"invalid input"}`))
 				return
 			}
+			//Validator: Must be within the 3 - 6 digits
 			if len(req.Pin) < 3 || len(req.Pin) > 6 {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte(`{"error":"pin must be 3-6 digits"}`))
 				return
 			}
+			//Validator: Must be only Number, no Letters
 			for _, c := range req.Pin {
 				if c < '0' || c > '9' {
 					w.WriteHeader(http.StatusBadRequest)
@@ -188,6 +191,7 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`{"error":"hash error"}`))
 				return
 			}
+			// DB Save Error
 			coll, err := db.GetCollection("users")
 			if err != nil {
 				log.Printf("db error: %v", err)
@@ -195,6 +199,7 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`{"error":"db error"}`))
 				return
 			}
+			// DB Error: Invalid ID read from Table
 			objID, err := primitive.ObjectIDFromHex(id)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -204,12 +209,14 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 			defer cancel()
 			res, err := coll.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": bson.M{"pin": string(hashedPin)}})
+			// DB Error: Pin Update Error
 			if err != nil {
 				log.Printf("update pin error: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(`{"error":"db error"}`))
 				return
 			}
+			// Error Handle: No user found In DB
 			if res.MatchedCount == 0 {
 				w.WriteHeader(http.StatusNotFound)
 				w.Write([]byte(`{"error":"user not found"}`))
