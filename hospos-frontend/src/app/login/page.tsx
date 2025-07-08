@@ -34,7 +34,7 @@ export default function LoginPage() {
         return;
       }
       const data = await res.json();
-      setAuth(data.token, data.role);
+      setAuth(data.token, data.role, data.name || name);
       router.push("/dashboard");
     } catch {
       setError("Server error");

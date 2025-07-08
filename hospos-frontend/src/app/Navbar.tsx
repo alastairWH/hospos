@@ -6,12 +6,14 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const [role, setRole] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const { role } = getAuth();
+    const { role, username } = getAuth();
     setRole(role);
+    setUsername(username);
   }, [pathname]);
 
   function handleLogout() {
@@ -31,8 +33,12 @@ export default function Navbar() {
         )}
       </div>
       <div className="flex items-center gap-4">
-        {role && (
-          <span className="text-gray-500 dark:text-gray-300 text-sm">Role: <span className="font-semibold">{role}</span></span>
+        {(role || username) && (
+          <span className="text-gray-500 dark:text-gray-300 text-sm">
+            {username && <span className="font-semibold">{username}</span>}
+            {username && role && <span> &middot; </span>}
+            {role && <span>Role: <span className="font-semibold">{role}</span></span>}
+          </span>
         )}
         <button
           onClick={handleLogout}
