@@ -19,6 +19,11 @@ var serverCmd *exec.Cmd
 func main() {
 	a := app.New()
 	w := a.NewWindow("HOSPOS Backend Admin")
+	// Set window icon
+	iconRes, err := fyne.LoadResourceFromPath("assets/icon-hospos.png")
+	if err == nil {
+		w.SetIcon(iconRes)
+	}
 
 	statusLabel := widget.NewLabel("Checking server...")
 	go func() {
