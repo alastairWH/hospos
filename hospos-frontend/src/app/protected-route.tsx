@@ -7,8 +7,10 @@ export default function ProtectedRoute({ children, allowedRoles }: { children: R
   const router = useRouter();
   useEffect(() => {
     const { token, role } = getAuth();
-    if (!token || !role || !allowedRoles.includes(role)) {
+    if (!token || !role) {
       router.replace("/login");
+    } else if (!allowedRoles.includes(role)) {
+      router.replace("/unauthorized");
     }
   }, [allowedRoles, router]);
   return <>{children}</>;
