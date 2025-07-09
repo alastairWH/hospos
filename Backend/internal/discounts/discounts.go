@@ -16,7 +16,7 @@ type Discount struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	Name      string             `json:"name"`
 	Percent   float64            `json:"percent"`
-	Type      string             `json:"type"` // "static" or "code"
+	Type      string             `json:"type"`
 	Code      string             `json:"code,omitempty"`
 	ExpiresAt *time.Time         `json:"expiresAt,omitempty"`
 	Active    bool               `json:"active"`
@@ -50,6 +50,10 @@ func DiscountsHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error":"db error"}`))
 			return
 		}
+		// Normalize type field to lowercase for all results
+		for i := range results {
+			results[i].Type = strings.ToLower(results[i].Type)
+		}
 		if err := json.NewEncoder(w).Encode(results); err != nil {
 			log.Printf("error encoding discounts: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -62,7 +66,8 @@ func DiscountsHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error":"invalid input"}`))
 			return
 		}
-		// Validate type
+		// Normalize and validate type
+		d.Type = strings.ToLower(d.Type)
 		if d.Type != "static" && d.Type != "code" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{"error":"type must be 'static' or 'code'"}`))
@@ -160,8 +165,8 @@ func DiscountsHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error":"invalid id"}`))
 			return
 		}
-		// Set new expiry (e.g., 1 hour from now)
-		newExpiry := time.Now().Add(1 * time.Hour)
+		// Set new expiry (default: 1 month from now)
+		newExpiry := time.Now().AddDate(0, 1, 0)
 		update := bson.M{"$set": bson.M{"expiresat": newExpiry, "active": true}}
 		_, err = coll.UpdateByID(r.Context(), oid, update)
 		if err != nil {

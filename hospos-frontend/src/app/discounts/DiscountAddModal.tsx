@@ -40,7 +40,9 @@ export default function DiscountAddModal({ open, onClose, onAdded }: {
     };
     if (type === "code") payload.code = code.trim();
     if (timed) {
-      const expiresAt = new Date(Date.now() + duration * 60 * 1000);
+      // duration is in months
+      const now = new Date();
+      const expiresAt = new Date(now.setMonth(now.getMonth() + duration));
       payload.expiresAt = expiresAt.toISOString();
     }
     try {
@@ -110,11 +112,11 @@ export default function DiscountAddModal({ open, onClose, onAdded }: {
           </label>
           {timed && (
             <>
-              <label className="ml-2">Duration (minutes):</label>
+              <label className="ml-2">Duration (months):</label>
               <Input
                 type="number"
                 min={1}
-                max={1440}
+                max={24}
                 value={duration}
                 onChange={e => setDuration(Number(e.target.value))}
                 className="w-24"

@@ -81,6 +81,7 @@ func main() {
 	mux.HandleFunc("/api/receipts", withLoggingAndRecovery(withCORS(receipts.ReceiptsHandler)))
 	// Discounts
 	mux.HandleFunc("/api/discounts", withLoggingAndRecovery(withCORS(discounts.DiscountsHandler)))
+	mux.HandleFunc("/api/discounts/", withLoggingAndRecovery(withCORS(discounts.DiscountsHandler)))
 	// Locations
 	mux.HandleFunc("/api/locations", withLoggingAndRecovery(withCORS(locations.LocationsHandler)))
 	// Offline sync
