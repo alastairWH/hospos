@@ -22,8 +22,8 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow mb-6 rounded-b-xl px-4 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-6">
+    <nav className="bg-white dark:bg-gray-900 shadow rounded-b-xl px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-4">
         <Link href="/dashboard" className="font-bold text-lg text-blue-700 dark:text-blue-300">HOSPOS</Link>
         <Link href="/products" className="hover:underline text-gray-700 dark:text-gray-200">Products</Link>
         <Link href="/discounts" className="hover:underline text-gray-700 dark:text-gray-200">Discounts</Link>
@@ -35,7 +35,7 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         {(role || username) && (
           <span className="text-gray-500 dark:text-gray-300 text-sm">
-            {username && <span className="font-semibold">{username}</span>}
+            {username && <span>User: <span className="font-semibold">{username}</span></span>}
             {username && role && <span> &middot; </span>}
             {role && <span>Role: <span className="font-semibold">{role}</span></span>}
           </span>

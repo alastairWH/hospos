@@ -50,7 +50,7 @@ export default function TillsPage() {
 
   return (
     <ProtectedRoute allowedRoles={["admin", "manager"]}>
-      <div className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen p-8">
         <h1 className="text-3xl font-bold mb-6">Tills / Locations</h1>
         <form className="flex gap-3 mb-6" onSubmit={handleAddLocation}>
           <Input placeholder="Location name" value={name} onChange={e => setName(e.target.value)} />

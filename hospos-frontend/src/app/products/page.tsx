@@ -33,7 +33,7 @@ export default function ProductsPage() {
 
   return (
     <ProtectedRoute allowedRoles={["admin", "manager"]}>
-      <div className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen p-8">
         <div className="flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">Products</h1>

@@ -19,7 +19,7 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
-      <div className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen p-8">
         <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>

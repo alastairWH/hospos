@@ -68,7 +68,7 @@ export default function DiscountsPage() {
 
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
-      <div className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen p-8">
         <h1 className="text-3xl font-bold mb-6">Discounts</h1>
         {error && <Alert type="error">{error}</Alert>}
         <div className="mb-6 flex gap-2">
