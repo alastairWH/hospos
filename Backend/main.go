@@ -73,8 +73,9 @@ func main() {
 	mux.HandleFunc("/api/roles", withLoggingAndRecovery(withCORS(roles.RolesHandler)))
 	// Reports
 	mux.HandleFunc("/api/reports", withLoggingAndRecovery(withCORS(reports.ReportsHandler)))
-	// Customers
+	// Customers (list, add, update, delete, get by id)
 	mux.HandleFunc("/api/customers", withLoggingAndRecovery(withCORS(customers.CustomersHandler)))
+	mux.HandleFunc("/api/customers/", withLoggingAndRecovery(withCORS(customers.CustomersHandler)))
 	// Payments
 	mux.HandleFunc("/api/payments", withLoggingAndRecovery(withCORS(payments.PaymentsHandler)))
 	// Receipts

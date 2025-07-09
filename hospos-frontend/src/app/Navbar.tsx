@@ -26,23 +26,27 @@ export default function Navbar() {
   if (pathname === "/unauthorized") {
     return (
       <nav className="bg-white dark:bg-gray-900 shadow rounded-b-xl px-4 py-3 flex items-center">
-        <Link href="/dashboard" className="font-bold text-lg text-blue-700 dark:text-blue-300">HOSPOS</Link>
+        <Link href="/dashboard" className="flex items-center">
+          <img src="/logo-hospos.svg" alt="HOSPOS Logo" className="h-32 w-auto" />
+        </Link>
       </nav>
     );
   }
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow rounded-b-xl px-4 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard" className="font-bold text-lg text-blue-700 dark:text-blue-300">HOSPOS</Link>
+    <nav className="bg-white dark:bg-gray-900 shadow rounded-b-xl px-8 py-4 flex items-center justify-between min-h-[88px]">
+      <div className="flex items-center gap-10">
+        <Link href="/dashboard" className="flex items-center mr-10">
+          <img src="/logo-hospos.svg" alt="HOSPOS Logo" className="h-20 w-auto" />
+        </Link>
         {isLoggedIn && (
-          <>
+          <div className="flex items-center gap-8">
             <Link href="/products" className="hover:underline text-gray-700 dark:text-gray-200">Products</Link>
             <Link href="/discounts" className="hover:underline text-gray-700 dark:text-gray-200">Discounts</Link>
             <Link href="/tills" className="hover:underline text-gray-700 dark:text-gray-200">Tills</Link>
             {role === "admin" && (
               <Link href="/admin" className="hover:underline text-gray-700 dark:text-gray-200">Admin</Link>
             )}
-          </>
+          </div>
         )}
       </div>
       <div className="flex items-center gap-4">
