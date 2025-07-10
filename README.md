@@ -2,7 +2,7 @@
   <img src="./hospos-frontend/public/logo-hospos.svg" alt="HOSPOS Logo" width="180"/>
 </p>
 
-# HOSPOS — Modern Restaurant POS System
+# HOSPOS — Modern OPEN SOURCE Restaurant POS System
 
 HOSPOS is a modern, full-stack Point of Sale system for restaurants, cafes, and hospitality venues. It features a robust Go backend and a sleek Next.js/React/Tailwind frontend, designed for speed, reliability, and a beautiful user experience.
 
