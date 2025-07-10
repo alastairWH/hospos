@@ -22,7 +22,6 @@ export default function Navbar() {
   }
 
   const isLoggedIn = !!role || !!username;
-  // Hide all navbar entries except HOSPOS on /unauthorized
   if (pathname === "/unauthorized") {
     return (
       <nav className="bg-white dark:bg-gray-900 shadow rounded-b-xl px-4 py-3 flex items-center">
