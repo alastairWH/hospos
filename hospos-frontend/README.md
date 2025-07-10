@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+```markdown
+<p align="center">
+  <img src="/logo-hospos.svg" alt="HOSPOS Logo" width="180"/>
+</p>
+
+# HOSPOS Frontend
+
+This is the modern Next.js/React/Tailwind frontend for the HOSPOS restaurant POS system.
+
+---
+
+## Features
+- Responsive, touch-friendly UI for tills, bookings, and admin
+- Bookings: create, view, and manage bookings (with customer, table, products, notes, status)
+- Customers: add, search, and view customers
+- Products, categories, tills/locations management
+- Discounts and role-based access
+- Modern navigation with logo and dark mode
+- API proxy for seamless backend integration
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- Backend API running (see project root README)
 
+### Setup
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+- Open [http://localhost:3000](http://localhost:3000) to use the app.
+
+---
+
+## Project Structure
+```
+src/app/
+  bookings/
+  customers/
+  ...
+public/
+  logo-hospos.svg
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Customization
+- Edit `src/app/Navbar.tsx` for navigation and branding
+- Add new pages or modals in `src/app/`
+- Tailwind CSS for easy UI changes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+<p align="center">
+  <img src="/logo-hospos.svg" alt="HOSPOS Logo" width="120"/>
+</p>
+```
