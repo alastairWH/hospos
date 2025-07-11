@@ -31,23 +31,32 @@ export default function BookingDetailModal({ open, bookingId, onClose }: Booking
     if (!open || !bookingId) return;
     setLoading(true);
     fetch(`http://localhost:8080/api/bookings/${bookingId}`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         setBooking(data);
         setEditStatus(data.status);
         setEditTime(data.bookingTime ? data.bookingTime.slice(0, 16) : "");
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setBooking(null);
+        setLoading(false);
+      });
   }, [open, bookingId]);
 
   const handleSave = async () => {
     if (!bookingId) return;
     setSaving(true);
+    // Always send bookingTime in the correct format (YYYY-MM-DDTHH:mm)
+    const patchBody: any = { status: editStatus };
+    if (editTime) patchBody.bookingTime = editTime;
     await fetch(`http://localhost:8080/api/bookings/${bookingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: editStatus, bookingTime: editTime })
+      body: JSON.stringify(patchBody)
     });
     setSaving(false);
     onClose();
@@ -61,7 +70,9 @@ export default function BookingDetailModal({ open, bookingId, onClose }: Booking
         <button className="absolute top-2 right-2 text-gray-500 hover:text-gray-800" onClick={onClose}>&times;</button>
         {loading ? (
           <div>Loading...</div>
-        ) : booking ? (
+        ) : !booking ? (
+          <div className="text-red-500">Booking not found or failed to load.</div>
+        ) : (
           <div>
             <h2 className="text-xl font-bold mb-2">Booking for Table {booking.tableNumber}</h2>
             <div className="mb-2 text-gray-700 dark:text-gray-300">Status: {" "}
@@ -71,7 +82,8 @@ export default function BookingDetailModal({ open, bookingId, onClose }: Booking
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            <div className="mb-2 text-gray-700 dark:text-gray-300">Booking Time: {" "}
+            <div className="mb-2 text-gray-700 dark:text-gray-300">Booking Time: <span className="font-semibold">{booking.bookingTime ? new Date(booking.bookingTime).toLocaleString() : "N/A"}</span></div>
+            <div className="mb-2 text-gray-700 dark:text-gray-300 flex items-center">Edit Booking Time: {" "}
               <input type="datetime-local" value={editTime ?? booking.bookingTime?.slice(0,16)} onChange={e => setEditTime(e.target.value)} className="border rounded px-2 py-1 ml-2" />
             </div>
             <div className="mb-2 text-gray-700 dark:text-gray-300">Created: {new Date(booking.createdAt).toLocaleString()}</div>
@@ -99,8 +111,6 @@ export default function BookingDetailModal({ open, bookingId, onClose }: Booking
               <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</button>
             </div>
           </div>
-        ) : (
-          <div className="text-red-500">Booking not found.</div>
         )}
       </div>
     </div>
