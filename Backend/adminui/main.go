@@ -135,6 +135,16 @@ func main() {
 			}
 		}()
 	})
+	clearBtn := widget.NewButton("Data Scrub (Wipe All Data)", func() {
+		go func() {
+			err := adminapi.ClearTestData()
+			if err != nil {
+				dialog.ShowError(err, w)
+			} else {
+				dialog.ShowInformation("Data Scrub", "All data wiped from collections!", w)
+			}
+		}()
+	})
 
 	// Role management UI
 	roleList := widget.NewMultiLineEntry()
@@ -175,7 +185,7 @@ func main() {
 
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("HOSPOS Backend Admin UI (Fyne)"),
-		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn),
+		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn, clearBtn),
 		widget.NewSeparator(),
 		widget.NewLabel("User Management"),
 		container.NewHBox(refreshBtn, addUserBtn),

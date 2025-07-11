@@ -123,3 +123,15 @@ func SeedTestData() error {
 	}
 	return nil
 }
+
+func ClearTestData() error {
+	resp, err := http.Post(apiBaseURL()+"/devtools/clear", "application/json", nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return errors.New("failed to clear test data: " + resp.Status)
+	}
+	return nil
+}
