@@ -42,6 +42,8 @@ export default function Navbar() {
             <Link href="/products" className="hover:underline text-gray-700 dark:text-gray-200">Products</Link>
             <Link href="/discounts" className="hover:underline text-gray-700 dark:text-gray-200">Discounts</Link>
             <Link href="/tills" className="hover:underline text-gray-700 dark:text-gray-200">Tills</Link>
+            <Link href="/customers" className="hover:underline text-gray-700 dark:text-gray-200">Customers</Link>
+            <Link href="/bookings" className="hover:underline text-gray-700 dark:text-gray-200">Bookings</Link>
             {role === "admin" && (
               <Link href="/admin" className="hover:underline text-gray-700 dark:text-gray-200">Admin</Link>
             )}
