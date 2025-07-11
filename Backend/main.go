@@ -4,7 +4,9 @@ import (
 	"hospos-backend/internal/bookings"
 	"hospos-backend/internal/customers"
 	"hospos-backend/internal/dbinit"
+	"hospos-backend/internal/devtools"
 	"hospos-backend/internal/discounts"
+	"hospos-backend/internal/finance"
 	"hospos-backend/internal/inventory"
 	"hospos-backend/internal/linking"
 	"hospos-backend/internal/locations"
@@ -108,6 +110,11 @@ func main() {
 		}
 		w.Write([]byte(`{"status":"db initialized"}`))
 	})))
+	// Finance summary
+	mux.HandleFunc("/api/finance/summary", withLoggingAndRecovery(withCORS(finance.FinanceSummaryHandler)))
+	// Devtools
+	mux.HandleFunc("/api/devtools/seed", withLoggingAndRecovery(withCORS(devtools.SeedTestDataHandler)))
+	mux.HandleFunc("/api/devtools/clear", withLoggingAndRecovery(withCORS(devtools.ClearTestDataHandler)))
 
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -111,3 +111,15 @@ func InitDB() error {
 	}
 	return nil
 }
+
+func SeedTestData() error {
+	resp, err := http.Post(apiBaseURL()+"/devtools/seed", "application/json", nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return errors.New("failed to seed test data: " + resp.Status)
+	}
+	return nil
+}

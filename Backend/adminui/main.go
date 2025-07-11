@@ -125,6 +125,16 @@ func main() {
 			}
 		}()
 	})
+	seedBtn := widget.NewButton("Add Sample Data", func() {
+		go func() {
+			err := adminapi.SeedTestData()
+			if err != nil {
+				dialog.ShowError(err, w)
+			} else {
+				dialog.ShowInformation("Seed Data", "Sample data added successfully!", w)
+			}
+		}()
+	})
 
 	// Role management UI
 	roleList := widget.NewMultiLineEntry()
@@ -165,7 +175,7 @@ func main() {
 
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("HOSPOS Backend Admin UI (Fyne)"),
-		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn),
+		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn),
 		widget.NewSeparator(),
 		widget.NewLabel("User Management"),
 		container.NewHBox(refreshBtn, addUserBtn),
