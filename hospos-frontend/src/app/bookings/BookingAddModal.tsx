@@ -16,6 +16,7 @@ export default function BookingAddModal({ open, onClose, onAdded }: BookingAddMo
   const [customerOptions, setCustomerOptions] = useState<{ id: string; name: string }[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
   const [bookingTime, setBookingTime] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,19 +39,56 @@ export default function BookingAddModal({ open, onClose, onAdded }: BookingAddMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-    const res = await fetch("http://localhost:8080/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableNumber, customerId, notes, products: [], billTotal: 0, bookingTime })
-    });
-    if (res.ok) {
+    // Client-side validation
+    if (!tableNumber.trim()) {
+      setError("Table number is required.");
+      return;
+    }
+    if (!bookingDate) {
+      setError("Booking date is required.");
+      return;
+    }
+    if (!bookingTime) {
+      setError("Booking time is required.");
+      return;
+    }
+    // Validate customerId: must be a 24-char hex string (MongoDB ObjectID)
+    if (!customerId || !/^[a-fA-F0-9]{24}$/.test(customerId)) {
+      setError("Please select a valid customer from the dropdown.");
+      return;
+    }
+    setLoading(true);
+    // Combine date and time into full RFC3339 string (YYYY-MM-DDTHH:mm:ssZ)
+    // Assume local time, convert to UTC for backend
+    const localDate = new Date(`${bookingDate}T${bookingTime}`);
+    const bookingTimeISO = localDate.toISOString();
+    try {
+      const res = await fetch("http://localhost:8080/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableNumber, customerId, notes, products: [], billTotal: 0, bookingTime: bookingTimeISO })
+      });
+      if (res.ok) {
+        setLoading(false);
+        onAdded();
+      } else {
+        let msg = "Failed to add booking.";
+        try {
+          const data = await res.json();
+          if (data && data.error) msg += ` ${data.error}`;
+        } catch (jsonErr) {
+          const text = await res.text();
+          if (text) msg += ` ${text}`;
+        }
+        setError(msg);
+        setLoading(false);
+        console.error('Booking add failed:', res.status, msg);
+      }
+    } catch (err) {
+      setError("Network error: Could not reach backend.");
       setLoading(false);
-      onAdded();
-    } else {
-      setError("Failed to add booking");
-      setLoading(false);
+      console.error('Booking add network error:', err);
     }
   };
 
@@ -78,13 +116,22 @@ export default function BookingAddModal({ open, onClose, onAdded }: BookingAddMo
           </div>
           <div className="mb-3">
             <label className="block mb-1 font-medium">Booking Date & Time</label>
-            <input
-              type="datetime-local"
-              className="border rounded px-2 py-1 w-full"
-              value={bookingTime}
-              onChange={e => setBookingTime(e.target.value)}
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                type="date"
+                className="border rounded px-2 py-1 w-full"
+                value={bookingDate}
+                onChange={e => setBookingDate(e.target.value)}
+                required
+              />
+              <input
+                type="time"
+                className="border rounded px-2 py-1 w-full"
+                value={bookingTime}
+                onChange={e => setBookingTime(e.target.value)}
+                required
+              />
+            </div>
           </div>
           <div className="mb-3 relative">
             <label className="block mb-1 font-medium">Customer</label>
@@ -103,6 +150,10 @@ export default function BookingAddModal({ open, onClose, onAdded }: BookingAddMo
               onFocus={() => setShowDropdown(true)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 100)}
             />
+            {/* Show warning if user types but does not select a valid customer */}
+            {customerSearch && !customerId && (
+              <div className="text-yellow-600 text-xs mt-1">Please select a customer from the dropdown.</div>
+            )}
             {showDropdown && customerOptions.length > 0 && (
               <ul className="absolute z-10 bg-white dark:bg-gray-800 border rounded w-full max-h-40 overflow-y-auto shadow">
                 {customerOptions.map((c) => (

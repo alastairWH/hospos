@@ -11,15 +11,15 @@ interface Booking {
   billTotal: number;
   status: string;
   createdAt: string;
+  bookingTime: string;
   closedAt?: string;
   notes?: string;
 }
 
 function BookingCalendar({ bookings }: { bookings: any[] }) {
-  // Placeholder: In a real app, use a calendar library or build a grid
-  // For now, just show a simple horizontal scrollable list by date
+  // Group by bookingTime (not createdAt)
   const grouped = bookings.reduce((acc: Record<string, any[]>, b) => {
-    const date = b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "Unknown";
+    const date = b.bookingTime ? new Date(b.bookingTime).toLocaleDateString() : "Unknown";
     acc[date] = acc[date] || [];
     acc[date].push(b);
     return acc;
@@ -49,7 +49,7 @@ function groupBookings(bookings: Booking[]) {
   const today: Booking[] = [];
   const future: Booking[] = [];
   bookings.forEach((b) => {
-    const dateStr = b.createdAt ? new Date(b.createdAt).toISOString().slice(0, 10) : "";
+    const dateStr = b.bookingTime ? new Date(b.bookingTime).toISOString().slice(0, 10) : "";
     if (dateStr < todayStr) previous.push(b);
     else if (dateStr === todayStr) today.push(b);
     else future.push(b);
@@ -60,18 +60,26 @@ function groupBookings(bookings: Booking[]) {
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     fetch("http://localhost:8080/api/bookings")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         setBookings(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        setError("Failed to load bookings. Please try again later.");
+        setLoading(false);
+      });
   }, []);
 
   const { previous, today, future } = groupBookings(bookings);
@@ -87,16 +95,28 @@ export default function BookingsPage() {
       <BookingAddModal open={showAdd} onClose={() => setShowAdd(false)} onAdded={() => {
         setShowAdd(false);
         setLoading(true);
-        fetch("http://localhost:8080/api/bookings").then(res => res.json()).then(data => {
-          setBookings(Array.isArray(data) ? data : []);
-          setLoading(false);
-        });
+        setError(null);
+        fetch("http://localhost:8080/api/bookings")
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            setBookings(Array.isArray(data) ? data : []);
+            setLoading(false);
+          })
+          .catch(() => {
+            setError("Failed to load bookings. Please try again later.");
+            setLoading(false);
+          });
       }} />
       <div className="mb-8">
         <BookingCalendar bookings={bookings} />
       </div>
       {loading ? (
         <div>Loading...</div>
+      ) : error ? (
+        <div className="text-red-500 mb-4">{error}</div>
       ) : bookings.length === 0 ? (
         <div>No bookings found.</div>
       ) : (
@@ -125,6 +145,7 @@ function Section({ title, bookings, onSelect }: { title: string; bookings: Booki
                 <span className={`px-2 py-1 rounded text-xs ${b.status === "open" ? "bg-green-100 text-green-700" : b.status === "closed" ? "bg-gray-200 text-gray-700" : "bg-red-100 text-red-700"}`}>{b.status.charAt(0).toUpperCase() + b.status.slice(1)}</span>
               </div>
               <div className="text-gray-700 dark:text-gray-300 mb-1">Bill: £{b.billTotal.toFixed(2)}</div>
+              <div className="text-gray-500 text-xs mb-1">Booking Time: {b.bookingTime ? new Date(b.bookingTime).toLocaleString() : "N/A"}</div>
               <div className="text-gray-500 text-xs mb-1">Created: {new Date(b.createdAt).toLocaleString()}</div>
               {b.closedAt && <div className="text-gray-500 text-xs">Closed: {new Date(b.closedAt).toLocaleString()}</div>}
               {b.notes && <div className="text-gray-400 text-xs mt-2 italic">{b.notes}</div>}

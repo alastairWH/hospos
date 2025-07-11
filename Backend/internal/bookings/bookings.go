@@ -91,17 +91,28 @@ func BookingsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		var b Booking
 		if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+			log.Printf("Booking decode error: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error":"invalid input"}`))
+			w.Write([]byte(`{"error":"invalid input: ` + err.Error() + `"}`))
 			return
 		}
 		b.ID = primitive.NewObjectID()
 		b.CreatedAt = time.Now()
 		// Parse bookingTime from string if present (for compatibility)
-		if b.BookingTime.IsZero() && r.FormValue("bookingTime") != "" {
-			t, err := time.Parse(time.RFC3339, r.FormValue("bookingTime"))
-			if err == nil {
-				b.BookingTime = t
+		// Try to parse bookingTime from JSON string if it's not already set
+		if b.BookingTime.IsZero() {
+			var raw map[string]interface{}
+			if err := json.NewDecoder(r.Body).Decode(&raw); err == nil {
+				if bt, ok := raw["bookingTime"].(string); ok && bt != "" {
+					// Try both formats: with and without seconds
+					t, err := time.Parse("2006-01-02T15:04", bt)
+					if err != nil {
+						t, err = time.Parse(time.RFC3339, bt)
+					}
+					if err == nil {
+						b.BookingTime = t
+					}
+				}
 			}
 		}
 		if b.BookingTime.IsZero() {
