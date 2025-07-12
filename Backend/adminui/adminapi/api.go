@@ -19,6 +19,28 @@ type Role struct {
 	Role string `json:"role"`
 }
 
+type BusinessInfo struct {
+	CompanyName      string   `json:"companyName"`
+	CompanyAddress   string   `json:"companyAddress"`
+	FinanceEmail     string   `json:"financeEmail"`
+	VATID            string   `json:"vatId"`
+	CompanyRegNumber string   `json:"companyRegNumber"`
+	Phone            string   `json:"phone"`
+	Website          string   `json:"website"`
+	LogoURL          string   `json:"logoUrl"`
+	SalesIDPrefix    string   `json:"salesIdPrefix"`
+	Currency         string   `json:"currency"`
+	DefaultTaxRate   float64  `json:"defaultTaxRate"`
+	BankDetails      string   `json:"bankDetails"`
+	LegalFooter      string   `json:"legalFooter"`
+	OpeningHours     string   `json:"openingHours"`
+	SocialLinks      []string `json:"socialLinks"`
+	CustomReceiptMsg string   `json:"customReceiptMsg"`
+	InvoiceFormat    string   `json:"invoiceFormat"`
+	Country          string   `json:"country"`
+	LastSalesNumber  int      `json:"lastSalesNumber"`
+}
+
 func apiBaseURL() string {
 	url := os.Getenv("HOSPOS_API_URL")
 	if url == "" {
@@ -132,6 +154,38 @@ func ClearTestData() error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return errors.New("failed to clear test data: " + resp.Status)
+	}
+	return nil
+}
+
+func GetBusinessInfo() (*BusinessInfo, error) {
+	resp, err := http.Get(apiBaseURL() + "/business")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("failed to get business info: " + resp.Status)
+	}
+	var info BusinessInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return nil, err
+	}
+	return &info, nil
+}
+
+func SetBusinessInfo(info *BusinessInfo) error {
+	b, err := json.Marshal(info)
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(apiBaseURL()+"/business", "application/json", bytes.NewReader(b))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return errors.New("failed to set business info: " + resp.Status)
 	}
 	return nil
 }

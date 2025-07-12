@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
@@ -15,6 +16,21 @@ import (
 )
 
 var serverCmd *exec.Cmd
+
+func joinWithComma(list []string) string {
+	return fmt.Sprintf("%s", fyne.JoinStrings(list, ","))
+}
+
+func splitByComma(s string) []string {
+	var result []string
+	for _, v := range fyne.SplitStrings(s, ",") {
+		trimmed := fyne.TrimSpace(v)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
 
 func main() {
 	a := app.New()
@@ -165,27 +181,28 @@ func main() {
 	})
 	addRoleBtn := widget.NewButton("Add Role", func() {
 		roleEntry := widget.NewEntry()
-		dialog.ShowForm("Add Role", "Add", "Cancel",
-			[]*widget.FormItem{
-				widget.NewFormItem("Role", roleEntry),
-			},
-			func(ok bool) {
-				if ok {
-					go func() {
-						err := adminapi.AddRole(roleEntry.Text)
-						if err != nil {
-							dialog.ShowError(err, w)
-						} else {
-							refreshRolesBtn.OnTapped()
-						}
-					}()
-				}
-			}, w)
-	})
+	dialog.ShowForm("Add Role", "Add", "Cancel",
+		[]*widget.FormItem{
+			widget.NewFormItem("Role", roleEntry),
+		},
+		func(ok bool) {
+			if ok {
+				go func() {
+					err := adminapi.AddRole(roleEntry.Text)
+					if err != nil {
+						dialog.ShowError(err, w)
+					} else {
+						refreshRolesBtn.OnTapped()
+					}
+				}()
+			}
+		}, w,
+	)
+	
 
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("HOSPOS Backend Admin UI (Fyne)"),
-		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn, clearBtn),
+		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn, clearBtn, businessBtn),
 		widget.NewSeparator(),
 		widget.NewLabel("User Management"),
 		container.NewHBox(refreshBtn, addUserBtn),

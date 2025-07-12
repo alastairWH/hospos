@@ -2,6 +2,7 @@ package main
 
 import (
 	"hospos-backend/internal/bookings"
+	"hospos-backend/internal/business"
 	"hospos-backend/internal/customers"
 	"hospos-backend/internal/dbinit"
 	"hospos-backend/internal/devtools"
@@ -115,6 +116,8 @@ func main() {
 	// Devtools
 	mux.HandleFunc("/api/devtools/seed", withLoggingAndRecovery(withCORS(devtools.SeedTestDataHandler)))
 	mux.HandleFunc("/api/devtools/clear", withLoggingAndRecovery(withCORS(devtools.ClearTestDataHandler)))
+	// Business info (combine GET and POST/PUT in one handler)
+	mux.HandleFunc("/api/business", withLoggingAndRecovery(withCORS(business.BusinessInfoHandler)))
 
 	port := os.Getenv("PORT")
 	if port == "" {
