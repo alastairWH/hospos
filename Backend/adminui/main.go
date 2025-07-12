@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
@@ -16,21 +15,6 @@ import (
 )
 
 var serverCmd *exec.Cmd
-
-func joinWithComma(list []string) string {
-	return fmt.Sprintf("%s", fyne.JoinStrings(list, ","))
-}
-
-func splitByComma(s string) []string {
-	var result []string
-	for _, v := range fyne.SplitStrings(s, ",") {
-		trimmed := fyne.TrimSpace(v)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-	return result
-}
 
 func main() {
 	a := app.New()
@@ -40,6 +24,16 @@ func main() {
 	if err == nil {
 		w.SetIcon(iconRes)
 	}
+
+	// Now define widgets after app and window are created
+	refreshRolesBtn := widget.NewButton("Refresh Roles", func() {
+		// Implement role refresh logic if needed
+	})
+
+	addRoleBtn := widget.NewButton("Add Role", nil) // OnTapped set below
+
+	roleList := widget.NewMultiLineEntry()
+	roleList.SetPlaceHolder("Roles will be listed here...")
 
 	statusLabel := widget.NewLabel("Checking server...")
 	go func() {
@@ -131,78 +125,71 @@ func main() {
 				}
 			}, w)
 	})
-	dbInitBtn := widget.NewButton("Init DB", func() {
+
+	addRoleBtn.OnTapped = func() {
+		roleEntry := widget.NewEntry()
+		dialog.ShowForm("Add Role", "Add", "Cancel",
+			[]*widget.FormItem{
+				widget.NewFormItem("Role Name", roleEntry),
+			},
+			func(ok bool) {
+				if ok {
+					go func() {
+						err := adminapi.AddRole(roleEntry.Text)
+						if err != nil {
+							dialog.ShowError(err, w)
+						} else {
+							refreshRolesBtn.OnTapped()
+						}
+					}()
+				}
+			}, w,
+		)
+	}
+
+	// Devtools buttons (now in scope)
+	dbInitBtn := widget.NewButton("DB Init", func() {
 		go func() {
 			err := adminapi.InitDB()
 			if err != nil {
+				fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "DB Init", Content: "Error: " + err.Error()})
 				dialog.ShowError(err, w)
 			} else {
-				dialog.ShowInformation("DB Init", "Database initialized successfully!", w)
+				fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "DB Init", Content: "Database initialized!"})
+				dialog.ShowInformation("DB Init", "Database initialized!", w)
 			}
 		}()
 	})
-	seedBtn := widget.NewButton("Add Sample Data", func() {
+
+	seedBtn := widget.NewButton("Seed Test Data", func() {
 		go func() {
 			err := adminapi.SeedTestData()
 			if err != nil {
+				fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "Seed Data", Content: "Error: " + err.Error()})
 				dialog.ShowError(err, w)
 			} else {
-				dialog.ShowInformation("Seed Data", "Sample data added successfully!", w)
+				fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "Seed Data", Content: "Test data seeded!"})
+				dialog.ShowInformation("Seed Data", "Test data seeded!", w)
 			}
 		}()
 	})
-	clearBtn := widget.NewButton("Data Scrub (Wipe All Data)", func() {
+
+	clearBtn := widget.NewButton("Clear Test Data", func() {
 		go func() {
 			err := adminapi.ClearTestData()
 			if err != nil {
+				fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "Clear Data", Content: "Error: " + err.Error()})
 				dialog.ShowError(err, w)
 			} else {
-				dialog.ShowInformation("Data Scrub", "All data wiped from collections!", w)
+				fyne.CurrentApp().SendNotification(&fyne.Notification{Title: "Clear Data", Content: "Test data cleared!"})
+				dialog.ShowInformation("Clear Data", "Test data cleared!", w)
 			}
 		}()
 	})
-
-	// Role management UI
-	roleList := widget.NewMultiLineEntry()
-	roleList.SetPlaceHolder("Roles will be listed here...")
-	refreshRolesBtn := widget.NewButton("Refresh Roles", func() {
-		go func() {
-			roles, err := adminapi.GetRoles()
-			if err != nil {
-				roleList.SetText("Error: " + err.Error())
-				return
-			}
-			var lines string
-			for _, r := range roles {
-				lines += r.Role + "\n"
-			}
-			roleList.SetText(lines)
-		}()
-	})
-	addRoleBtn := widget.NewButton("Add Role", func() {
-		roleEntry := widget.NewEntry()
-	dialog.ShowForm("Add Role", "Add", "Cancel",
-		[]*widget.FormItem{
-			widget.NewFormItem("Role", roleEntry),
-		},
-		func(ok bool) {
-			if ok {
-				go func() {
-					err := adminapi.AddRole(roleEntry.Text)
-					if err != nil {
-						dialog.ShowError(err, w)
-					} else {
-						refreshRolesBtn.OnTapped()
-					}
-				}()
-			}
-		}, w,
-	)
-	
 
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("HOSPOS Backend Admin UI (Fyne)"),
-		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn, clearBtn, businessBtn),
+		container.NewHBox(startBtn, stopBtn, statusLabel, dbInitBtn, seedBtn, clearBtn),
 		widget.NewSeparator(),
 		widget.NewLabel("User Management"),
 		container.NewHBox(refreshBtn, addUserBtn),
