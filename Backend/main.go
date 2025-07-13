@@ -21,6 +21,7 @@ import (
 	"hospos-backend/internal/sync"
 	"hospos-backend/internal/users"
 	"log"
+	"net"
 	"net/http"
 	"os"
 )
@@ -123,9 +124,26 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	// Log external IP address
+	ip, err := getOutboundIP()
+	if err != nil {
+		log.Printf("Could not determine external IP: %v", err)
+	} else {
+		log.Printf("External IP address: %s", ip)
+	}
 	log.Printf("Starting server on :%s...", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
 
+// getOutboundIP gets the preferred outbound IP of this machine
+func getOutboundIP() (net.IP, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP, nil
 }
