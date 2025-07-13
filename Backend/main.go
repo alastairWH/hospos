@@ -56,7 +56,8 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 
 func main() {
 	mux := http.NewServeMux()
-
+	// Heartbeat
+	mux.HandleFunc("/api/heartbeat", withLoggingAndRecovery(withCORS(linking.HeartbeatHandler)))
 	// Product management
 	mux.HandleFunc("/api/products", withLoggingAndRecovery(withCORS(products.ProductsHandler)))
 	mux.HandleFunc("/api/products/", withLoggingAndRecovery(withCORS(products.ProductByIDHandler)))
