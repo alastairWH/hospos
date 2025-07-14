@@ -35,7 +35,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
   Future<void> _showDiscountModal() async {
     await _fetchDiscounts();
-    showDialog(
+    final selected = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -58,12 +58,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                   ? const Icon(Icons.check, color: Colors.green)
                                   : null,
                               onTap: () {
-                                setState(() {
-                                  _selectedDiscountId = discount['id'];
-                                  _selectedDiscountPercent = (discount['percent'] ?? 0).toDouble();
-                                  _selectedDiscountName = discount['name'] ?? '';
-                                });
-                                Navigator.of(context).pop();
+                                Navigator.of(context).pop(discount);
                               },
                             );
                           },
@@ -78,6 +73,13 @@ class _SalesScreenState extends State<SalesScreen> {
         );
       },
     );
+    if (selected != null) {
+      setState(() {
+        _selectedDiscountId = selected['id'] ?? selected['_id'];
+        _selectedDiscountPercent = (selected['percent'] ?? 0).toDouble();
+        _selectedDiscountName = selected['name'] ?? '';
+      });
+    }
   }
   List<String> _categories = [];
   String? _selectedCategory;
@@ -310,30 +312,62 @@ class _SalesScreenState extends State<SalesScreen> {
                             const SizedBox(height: 12),
                             Text('Subtotal: £${_cartSubtotal.toStringAsFixed(2)}'),
                             Text('VAT (included): £${_cartTax.toStringAsFixed(2)}'),
-                            if (_selectedDiscountId != null && _selectedDiscountPercent > 0)
-                              Text(
-                                'Discount: -£${(_cartSubtotal * (_selectedDiscountPercent / 100)).toStringAsFixed(2)} (${_selectedDiscountPercent.toStringAsFixed(0)}%)',
-                                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                            Text(
+                              _selectedDiscountId != null && _selectedDiscountPercent > 0
+                                  ? 'Discount: -£${(_cartSubtotal * (_selectedDiscountPercent / 100)).toStringAsFixed(2)} (${_selectedDiscountPercent.toStringAsFixed(0)}%)'
+                                  : 'Discount: None applied',
+                              style: TextStyle(
+                                color: _selectedDiscountId != null && _selectedDiscountPercent > 0 ? Colors.green : Colors.grey[700],
+                                fontWeight: FontWeight.w600,
                               ),
+                            ),
                             Text(
                               'Total: £${(_cartSubtotal - (_selectedDiscountId != null ? _cartSubtotal * (_selectedDiscountPercent / 100) : 0)).toStringAsFixed(2)}',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: accentColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  elevation: 4,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: _selectedDiscountId != null && _selectedDiscountPercent > 0 ? 5 : 10,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: accentColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      elevation: 4,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    icon: const Icon(Icons.percent),
+                                    label: const Text('Apply Discount'),
+                                    onPressed: _showDiscountModal,
+                                  ),
                                 ),
-                                icon: const Icon(Icons.percent),
-                                label: const Text('Apply Discount'),
-                                onPressed: _showDiscountModal,
-                              ),
+                                if (_selectedDiscountId != null && _selectedDiscountPercent > 0)
+                                  const SizedBox(width: 12),
+                                if (_selectedDiscountId != null && _selectedDiscountPercent > 0)
+                                  Expanded(
+                                    flex: 5,
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        elevation: 4,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      icon: const Icon(Icons.close),
+                                      label: const Text('Remove'),
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedDiscountId = null;
+                                          _selectedDiscountPercent = 0.0;
+                                          _selectedDiscountName = '';
+                                        });
+                                      },
+                                    ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 12),
                             SizedBox(
