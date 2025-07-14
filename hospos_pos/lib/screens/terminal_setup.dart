@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class TerminalSetupScreen extends StatefulWidget {
   final VoidCallback? onLinked;
@@ -12,8 +13,18 @@ class _TerminalSetupScreenState extends State<TerminalSetupScreen> {
   final _terminalIdController = TextEditingController();
   bool _isLinked = false;
   bool _isSetupInProgress = false;
+  bool _isOnline = false;
+  final _serverIpController = TextEditingController();
+  bool _serverConnected = false;
+  bool _serverTested = false;
   String? _error;
   String _status = '';
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
 
   void _showLinkingCodeDialog() {
     showDialog(
@@ -35,11 +46,20 @@ class _TerminalSetupScreenState extends State<TerminalSetupScreen> {
   }
 
   Future<void> _linkTerminal() async {
-    setState(() { _error = null; _isSetupInProgress = true; _status = 'Setting up terminal...'; });
+    setState(() { _error = null; _isSetupInProgress = true; _status = 'Linking terminal...'; });
     if (_terminalIdController.text.isEmpty) {
       setState(() { _error = 'Please enter a linking code.'; _isSetupInProgress = false; });
       return;
     }
+    final success = await ApiService.linkTerminal(_terminalIdController.text);
+    if (!success) {
+      setState(() { _error = 'Failed to link terminal. Check your code and network.'; _isSetupInProgress = false; });
+      return;
+    }
+    setState(() { _status = 'Checking terminal status...'; });
+    final online = await ApiService.sendHeartbeat(_terminalIdController.text);
+    setState(() { _isOnline = online; });
+    setState(() { _status = online ? 'Terminal is online.' : 'Terminal is offline.'; });
     await Future.delayed(const Duration(seconds: 2));
     setState(() { _status = 'Pulling products...'; });
     await Future.delayed(const Duration(seconds: 2));
@@ -47,7 +67,6 @@ class _TerminalSetupScreenState extends State<TerminalSetupScreen> {
     await Future.delayed(const Duration(seconds: 2));
     setState(() { _isLinked = true; _isSetupInProgress = false; _status = 'Terminal linked and ready!'; });
     if (widget.onLinked != null) widget.onLinked!();
-    // TODO: Start heartbeat after linking
   }
 
   @override
@@ -55,6 +74,103 @@ class _TerminalSetupScreenState extends State<TerminalSetupScreen> {
     final accentColor = Colors.orangeAccent;
     return Scaffold(
       backgroundColor: Colors.indigo[50],
+      appBar: AppBar(
+        backgroundColor: Colors.indigo[100],
+        elevation: 0,
+        title: const Text('Terminal Setup', style: TextStyle(color: Colors.indigo)),
+        actions: [
+          Row(
+            children: [
+              if (_serverConnected) ...[
+                Icon(Icons.circle, color: Colors.green, size: 18),
+                const SizedBox(width: 4),
+              ],
+              IconButton(
+                icon: const Icon(Icons.wifi_tethering, color: Colors.indigo),
+                tooltip: 'Test Connection',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Text('Test Server Connection'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: _serverIpController,
+                            decoration: InputDecoration(
+                              labelText: 'Server IP',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: Icon(Icons.cloud, color: accentColor),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          StatefulBuilder(
+                            builder: (context, setDialogState) {
+                              return ElevatedButton.icon(
+                                icon: Icon(Icons.wifi_tethering, color: accentColor),
+                                label: const Text('Test Connection'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.indigo,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () async {
+                                  final ip = _serverIpController.text.trim();
+                                  if (ip.isEmpty) return;
+                                  setDialogState(() { _status = 'Testing connection...'; _serverTested = false; });
+                                  final ok = await ApiService.testConnection(ip);
+                                  setState(() {
+                                    _serverConnected = ok;
+                                    _serverTested = true;
+                                    _status = ok ? 'Server connected! Using $ip' : 'Server not found.';
+                                  });
+                                  setDialogState(() {
+                                    _serverConnected = ok;
+                                    _serverTested = true;
+                                    _status = ok ? 'Server connected! Using $ip' : 'Server not found.';
+                                  });
+                                  if (ok) {
+                                    Navigator.of(ctx).pop();
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                          if (_serverTested) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _serverConnected ? Icons.circle : Icons.error,
+                                  color: _serverConnected ? Colors.green : Colors.red,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _serverConnected ? 'Server connected' : 'Server not found',
+                                  style: TextStyle(
+                                    color: _serverConnected ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(_status, style: TextStyle(color: Colors.indigo[700], fontWeight: FontWeight.w600)),
+                          ]
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+            ],
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -76,6 +192,8 @@ class _TerminalSetupScreenState extends State<TerminalSetupScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Text('Server IP: ${ApiService.baseUrl}', style: TextStyle(color: Colors.indigo[700], fontSize: 14)),
+                    const SizedBox(height: 8),
                     Image.asset('assets/logo-hospos.png', height: 80),
                     const SizedBox(height: 24),
                     Text('Terminal Setup', style: TextStyle(
@@ -164,6 +282,25 @@ class _TerminalSetupScreenState extends State<TerminalSetupScreen> {
                           const SizedBox(width: 8),
                           Text(_status, style: TextStyle(
                             color: Colors.indigo[700], fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ],
+                    if (_isOnline) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green, size: 24),
+                          const SizedBox(width: 8),
+                          const Text('Terminal is online', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ] else if (_isLinked && !_isOnline) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error, color: Colors.red, size: 24),
+                          const SizedBox(width: 8),
+                          const Text('Terminal is offline', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ],

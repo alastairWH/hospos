@@ -31,9 +31,21 @@ class WorkflowNavigator extends StatefulWidget {
 
 class _WorkflowNavigatorState extends State<WorkflowNavigator> {
   int _step = 0;
+  String _userName = 'User';
+  String _userRole = 'Role';
 
-  void _nextStep() {
-    setState(() { _step++; });
+  void _nextStep({String? userName, String? userRole}) {
+    setState(() {
+      _step++;
+      if (userName != null) _userName = userName;
+      if (userRole != null) _userRole = userRole;
+    });
+  }
+
+  void _logout() {
+    setState(() {
+      _step = 1; // Go back to login
+    });
   }
 
   @override
@@ -41,9 +53,9 @@ class _WorkflowNavigatorState extends State<WorkflowNavigator> {
     if (_step == 0) {
       return TerminalSetupScreen(onLinked: _nextStep);
     } else if (_step == 1) {
-      return PinLoginScreen(onLogin: _nextStep);
+      return PinLoginScreen(onLogin: () => _nextStep(userName: 'Alastair', userRole: 'Admin'));
     } else {
-      return const SalesScreen();
+      return SalesScreen(userName: _userName, userRole: _userRole, onLogout: _logout);
     }
   }
 }
