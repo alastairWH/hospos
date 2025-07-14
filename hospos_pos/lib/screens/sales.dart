@@ -13,6 +13,72 @@ class SalesScreen extends StatefulWidget {
 }
 
 class _SalesScreenState extends State<SalesScreen> {
+  List<Map<String, dynamic>> _discounts = [];
+  bool _discountsLoading = false;
+  String? _selectedDiscountId;
+  double _selectedDiscountPercent = 0.0;
+  String _selectedDiscountName = '';
+
+  Future<void> _fetchDiscounts() async {
+    setState(() { _discountsLoading = true; });
+    try {
+      // Replace with your actual API call
+      final discounts = await ApiService.getDiscounts();
+      setState(() {
+        _discounts = discounts;
+        _discountsLoading = false;
+      });
+    } catch (e) {
+      setState(() { _discountsLoading = false; });
+    }
+  }
+
+  Future<void> _showDiscountModal() async {
+    await _fetchDiscounts();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select Discount'),
+          content: _discountsLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SizedBox(
+                  width: 300,
+                  child: _discounts.isEmpty
+                      ? const Text('No discounts available')
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _discounts.length,
+                          itemBuilder: (context, idx) {
+                            final discount = _discounts[idx];
+                            return ListTile(
+                              title: Text(discount['name'] ?? 'Discount'),
+                              subtitle: Text('${discount['percent'] ?? 0}% off'),
+                              trailing: _selectedDiscountId == discount['id']
+                                  ? const Icon(Icons.check, color: Colors.green)
+                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  _selectedDiscountId = discount['id'];
+                                  _selectedDiscountPercent = (discount['percent'] ?? 0).toDouble();
+                                  _selectedDiscountName = discount['name'] ?? '';
+                                });
+                                Navigator.of(context).pop();
+                              },
+                            );
+                          },
+                        ),
+                ),
+          actions: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
   List<String> _categories = [];
   String? _selectedCategory;
   List<Map<String, dynamic>> _products = [];
@@ -66,11 +132,11 @@ class _SalesScreenState extends State<SalesScreen> {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 16),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Categories/Products area (70%)
                   Expanded(
@@ -244,45 +310,62 @@ class _SalesScreenState extends State<SalesScreen> {
                             const SizedBox(height: 12),
                             Text('Subtotal: £${_cartSubtotal.toStringAsFixed(2)}'),
                             Text('VAT (included): £${_cartTax.toStringAsFixed(2)}'),
-                            Text('Total: £${_cartTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: accentColor,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 4,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                            if (_selectedDiscountId != null && _selectedDiscountPercent > 0)
+                              Text(
+                                'Discount: -£${(_cartSubtotal * (_selectedDiscountPercent / 100)).toStringAsFixed(2)} (${_selectedDiscountPercent.toStringAsFixed(0)}%)',
+                                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
                               ),
-                              icon: const Icon(Icons.percent),
-                              label: const Text('Apply Discount'),
-                              onPressed: () {},
+                            Text(
+                              'Total: £${(_cartSubtotal - (_selectedDiscountId != null ? _cartSubtotal * (_selectedDiscountPercent / 100) : 0)).toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.indigo,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 4,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: accentColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 4,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                icon: const Icon(Icons.percent),
+                                label: const Text('Apply Discount'),
+                                onPressed: _showDiscountModal,
                               ),
-                              icon: const Icon(Icons.payment),
-                              label: const Text('Take Payment', style: TextStyle(fontSize: 18)),
-                              onPressed: () {},
                             ),
                             const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[700],
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 4,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.indigo,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 4,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                icon: const Icon(Icons.payment),
+                                label: const Text('Take Payment', style: TextStyle(fontSize: 18)),
+                                onPressed: () {},
                               ),
-                              icon: const Icon(Icons.receipt_long),
-                              label: const Text('Print Receipt', style: TextStyle(fontSize: 18)),
-                              onPressed: () {},
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[700],
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 4,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                icon: const Icon(Icons.receipt_long),
+                                label: const Text('Print Receipt', style: TextStyle(fontSize: 18)),
+                                onPressed: () {},
+                              ),
                             ),
                           ],
                         ),

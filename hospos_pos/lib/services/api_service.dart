@@ -3,6 +3,18 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  // Get discounts
+  static Future<List<Map<String, dynamic>>> getDiscounts() async {
+    if (_baseUrl == null) return [];
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/discounts'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      }
+    } catch (_) {}
+    return [];
+  }
   static String? _baseUrl; // Not set by default
 
   // Get categories
