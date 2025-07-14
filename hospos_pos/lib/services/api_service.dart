@@ -1,10 +1,23 @@
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static String? _baseUrl; // Not set by default
+
+  // Get categories
+  static Future<List<String>> getCategories() async {
+    if (_baseUrl == null) return [];
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/categories'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Assuming backend returns an array of category names
+        return List<String>.from(data);
+      }
+    } catch (_) {}
+    return [];
+  }
 
   static Future<void> loadServerIp() async {
     final prefs = await SharedPreferences.getInstance();
