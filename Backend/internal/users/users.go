@@ -30,6 +30,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"error":"invalid input"}`))
 		return
 	}
+	log.Printf("[AUTH] Attempt login: name='%s', pin='%s'", req.Name, req.Pin)
 	coll, err := db.GetCollection("users")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -41,12 +42,15 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	var user User
 	err = coll.FindOne(ctx, bson.M{"name": req.Name}).Decode(&user)
 	if err != nil {
+		log.Printf("[AUTH] User not found: name='%s'", req.Name)
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(`{"error":"invalid credentials"}`))
 		return
 	}
+	log.Printf("[AUTH] DB hash for user '%s': %s", user.Name, user.Pin)
 	// Compare hashed PIN
 	if bcrypt.CompareHashAndPassword([]byte(user.Pin), []byte(req.Pin)) != nil {
+		log.Printf("[AUTH] PIN mismatch for user '%s'", user.Name)
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(`{"error":"invalid credentials"}`))
 		return

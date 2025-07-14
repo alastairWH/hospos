@@ -41,7 +41,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
       setState(() { _error = 'PIN must be at least 3 digits.'; _isLoading = false; });
       return;
     }
-    final result = await ApiService.login(_selectedUser!['id'].toString(), _pinController.text);
+    final result = await ApiService.login(_selectedUser!['name'].toString(), _pinController.text);
     setState(() { _isLoading = false; });
     if (result != null) {
       if (widget.onLogin != null) widget.onLogin!();
