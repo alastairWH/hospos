@@ -60,8 +60,8 @@ class ApiService {
     if (_baseUrl == null) return null;
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
-        body: jsonEncode({'userId': userId, 'pin': pin}),
+        Uri.parse('$_baseUrl/api/auth'),
+        body: jsonEncode({'name': userId, 'pin': pin}),
         headers: {'Content-Type': 'application/json'},
       );
       if (response.statusCode == 200) {
