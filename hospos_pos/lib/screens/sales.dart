@@ -224,30 +224,29 @@ class _SalesScreenState extends State<SalesScreen> {
                                   childAspectRatio: 1.1,
                                   physics: const NeverScrollableScrollPhysics(),
                                   children: [
-                                    for (var n in ['1','2','3','4','5','6','7','8','9','.','0','⌫'])
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.indigo[100],
-                                          foregroundColor: Colors.indigo[900],
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          elevation: 2,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                        ),
-                                        onPressed: () {
-                                          setModalState(() {
-                                            if (n == '⌫') {
-                                              if (enteredAmount.isNotEmpty) {
-                                                enteredAmount = enteredAmount.substring(0, enteredAmount.length - 1);
-                                              }
-                                            } else if (n == '.') {
-                                              if (!enteredAmount.contains('.')) enteredAmount += '.';
-                                            } else {
-                                              enteredAmount += n;
-                                            }
-                                          });
-                                        },
-                                        child: Text(n, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    ...['1','2','3','4','5','6','7','8','9','.','0','⌫'].map((n) => ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.indigo[100],
+                                        foregroundColor: Colors.indigo[900],
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        elevation: 2,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),
+                                      onPressed: () {
+                                        setModalState(() {
+                                          if (n == '⌫') {
+                                            if (enteredAmount.isNotEmpty) {
+                                              enteredAmount = enteredAmount.substring(0, enteredAmount.length - 1);
+                                            }
+                                          } else if (n == '.') {
+                                            if (!enteredAmount.contains('.')) enteredAmount += '.';
+                                          } else {
+                                            enteredAmount += n;
+                                          }
+                                        });
+                                      },
+                                      child: Text(n, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    )),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
@@ -312,7 +311,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                   paymentType = 'cash';
                                 });
                                 if (amountDue <= 0) {
-                                  if (double.tryParse(enteredAmount) != null && double.tryParse(enteredAmount)! > 0 && double.tryParse(enteredAmount)! > amountDue) {
+                                  if (double.tryParse(enteredAmount) != null && double.tryParse(enteredAmount)! > amountDue) {
                                     double change = double.tryParse(enteredAmount)! - amountDue;
                                     await _showChangeModal(change);
                                   }
@@ -333,18 +332,22 @@ class _SalesScreenState extends State<SalesScreen> {
                               ),
                               icon: const Icon(Icons.credit_card),
                               label: const Text('Card', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                              onPressed: () {
+                              onPressed: () async {
                                 setModalState(() {
                                   double entered = double.tryParse(enteredAmount) ?? 0.0;
                                   if (entered > 0 && amountDue > 0) {
                                     double pay = entered > amountDue ? amountDue : entered;
-                                    cardPaid += pay;
+                                    cashPaid += pay;
                                     amountDue -= pay;
                                     enteredAmount = amountDue > 0 ? amountDue.toStringAsFixed(2) : '';
                                   }
-                                  paymentType = 'card';
+                                  paymentType = 'cash';
                                 });
                                 if (amountDue <= 0) {
+                                  if (double.tryParse(enteredAmount) != null && double.tryParse(enteredAmount)! > amountDue) {
+                                    double change = double.tryParse(enteredAmount)! - amountDue;
+                                    await _showChangeModal(change); // This must be awaited BEFORE closing the payment modal
+                                  }
                                   Navigator.of(context).pop({'cash': cashPaid, 'card': cardPaid});
                                 }
                               },
@@ -605,11 +608,6 @@ class _SalesScreenState extends State<SalesScreen> {
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
-                            // Payment breakdown after payment
-                            if (_cashPaid > 0 || _cardPaid > 0) ...[
-                              Text('Paid by Cash: £${_cashPaid.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                              Text('Paid by Card: £${_cardPaid.toStringAsFixed(2)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                            ],
                             Row(
                               children: [
                                 Expanded(
