@@ -1,12 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
 
+interface SaleProduct {
+  product_id: string;
+  name: string;
+  qty: number;
+  price: number;
+}
+
+interface SalePayment {
+  amount: number;
+  method: string;
+}
+
 interface Sale {
   id: string;
-  product_id: string;
-  quantity: number;
+  products: SaleProduct[];
   total: number;
   vat: number;
+  discount: number;
+  paid: number;
+  payments: SalePayment[];
 }
 
 export default function SalesReportPage() {
@@ -41,20 +55,48 @@ export default function SalesReportPage() {
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-800">
               <th className="p-2 text-left">Sale ID</th>
-              <th className="p-2 text-left">Product ID</th>
-              <th className="p-2 text-left">Quantity</th>
+              <th className="p-2 text-left">Products</th>
               <th className="p-2 text-left">Total (£)</th>
               <th className="p-2 text-left">VAT (£)</th>
+              <th className="p-2 text-left">Discount (£)</th>
+              <th className="p-2 text-left">Paid (£)</th>
+              <th className="p-2 text-left">Payments</th>
             </tr>
           </thead>
           <tbody>
             {sales.map((sale) => (
-              <tr key={sale.id} className="border-t">
+              <tr key={sale.id} className="border-t align-top">
                 <td className="p-2">{sale.id}</td>
-                <td className="p-2">{sale.product_id}</td>
-                <td className="p-2">{sale.quantity}</td>
-                <td className="p-2">{sale.total.toFixed(2)}</td>
-                <td className="p-2">{sale.vat.toFixed(2)}</td>
+                <td className="p-2">
+                  {Array.isArray(sale.products) && sale.products.length > 0 ? (
+                    <ul className="list-disc pl-4">
+                      {sale.products.map((p, idx) => (
+                        <li key={idx}>
+                          {p.name} x{p.qty} (£{p.price.toFixed(2)})
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-400">No products</span>
+                  )}
+                </td>
+                <td className="p-2">{sale.total?.toFixed(2) ?? "0.00"}</td>
+                <td className="p-2">{sale.vat?.toFixed(2) ?? "0.00"}</td>
+                <td className="p-2">{sale.discount?.toFixed(2) ?? "0.00"}</td>
+                <td className="p-2">{sale.paid?.toFixed(2) ?? "0.00"}</td>
+                <td className="p-2">
+                  {Array.isArray(sale.payments) && sale.payments.length > 0 ? (
+                    <ul className="list-disc pl-4">
+                      {sale.payments.map((pay, idx) => (
+                        <li key={idx}>
+                          {pay.method}: £{pay.amount.toFixed(2)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-400">No payments</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

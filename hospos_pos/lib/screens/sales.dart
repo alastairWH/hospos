@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/navbar.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class SalesScreen extends StatefulWidget {
   final String userName;
@@ -35,6 +37,17 @@ class _SalesScreenState extends State<SalesScreen> {
   void initState() {
     super.initState();
     _fetchCategories();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchSales() async {
+    try {
+      final response = await http.get(Uri.parse(ApiService.baseUrl! + '/sales'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      }
+    } catch (_) {}
+    return [];
   }
 
   Future<void> _fetchCategories() async {
@@ -337,17 +350,13 @@ class _SalesScreenState extends State<SalesScreen> {
                                   double entered = double.tryParse(enteredAmount) ?? 0.0;
                                   if (entered > 0 && amountDue > 0) {
                                     double pay = entered > amountDue ? amountDue : entered;
-                                    cashPaid += pay;
+                                    cardPaid += pay;
                                     amountDue -= pay;
                                     enteredAmount = amountDue > 0 ? amountDue.toStringAsFixed(2) : '';
                                   }
-                                  paymentType = 'cash';
+                                  paymentType = 'card';
                                 });
                                 if (amountDue <= 0) {
-                                  if (double.tryParse(enteredAmount) != null && double.tryParse(enteredAmount)! > amountDue) {
-                                    double change = double.tryParse(enteredAmount)! - amountDue;
-                                    await _showChangeModal(change); // This must be awaited BEFORE closing the payment modal
-                                  }
                                   Navigator.of(context).pop({'cash': cashPaid, 'card': cardPaid});
                                 }
                               },
@@ -364,23 +373,58 @@ class _SalesScreenState extends State<SalesScreen> {
           },
         );
       },
-    ).then((result) {
+    ).then((result) async {
       if (result is Map) {
-        setState(() {
-          _cashPaid = result['cash'] ?? 0.0;
-          _cardPaid = result['card'] ?? 0.0;
-          // Clear cart for new sale
-          _cart.clear();
-          _selectedDiscountId = null;
-          _selectedDiscountPercent = 0.0;
-          _selectedDiscountName = '';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Payment complete: Cash £${_cashPaid.toStringAsFixed(2)}, Card £${_cardPaid.toStringAsFixed(2)}'),
-            backgroundColor: Colors.indigo,
-          ),
-        );
+        // Save sale to backend
+        final sale = {
+          "products": _cart.map((item) => {
+            "product_id": item['id'],
+            "name": item['name'],
+            "qty": item['qty'],
+            "price": item['price'],
+          }).toList(),
+          "total": _cartSubtotal - (_selectedDiscountId != null ? _cartSubtotal * (_selectedDiscountPercent / 100) : 0),
+          "vat": _cartTax,
+          "discount": _selectedDiscountId != null ? _cartSubtotal * (_selectedDiscountPercent / 100) : 0,
+          "paid": result['cash'] + result['card'],
+          "payments": [
+            if (result['cash'] > 0) {"amount": result['cash'], "method": "cash"},
+            if (result['card'] > 0) {"amount": result['card'], "method": "card"},
+          ]
+        };
+        try {
+          final response = await ApiService.postSale(sale);
+          if (response != null && response['id'] != null) {
+            setState(() {
+              _cashPaid = result['cash'] ?? 0.0;
+              _cardPaid = result['card'] ?? 0.0;
+              _cart.clear();
+              _selectedDiscountId = null;
+              _selectedDiscountPercent = 0.0;
+              _selectedDiscountName = '';
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment complete: Cash £${result['cash'].toStringAsFixed(2)}, Card £${result['card'].toStringAsFixed(2)}'),
+                backgroundColor: Colors.indigo,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error saving sale!'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving sale!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     });
   }
@@ -614,7 +658,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                   flex: _selectedDiscountId != null && _selectedDiscountPercent > 0 ? 5 : 10,
                                   child: ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: accentColor,
+                                      backgroundColor: Colors.orangeAccent,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       elevation: 4,

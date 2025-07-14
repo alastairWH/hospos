@@ -65,6 +65,21 @@ class ApiService {
     }
   }
 
+static Future<Map<String, dynamic>?> postSale(Map<String, dynamic> sale) async {
+  if (_baseUrl == null) return null;
+  try {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/sales'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(sale),
+    );
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+  } catch (_) {}
+  return null;
+}
+
   // Heartbeat
   static Future<bool> sendHeartbeat(String tillId, {Map<String, dynamic>? deviceInfo}) async {
     if (_baseUrl == null) return false;

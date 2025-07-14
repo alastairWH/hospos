@@ -13,12 +13,26 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Sale struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+type SaleProduct struct {
 	ProductID primitive.ObjectID `json:"product_id" bson:"product_id"`
-	Quantity  int                `json:"quantity" bson:"quantity"`
-	Total     float64            `json:"total" bson:"total"`
-	VAT       float64            `json:"vat" bson:"vat"`
+	Name      string             `json:"name" bson:"name"`
+	Quantity  int                `json:"qty" bson:"qty"`
+	Price     float64            `json:"price" bson:"price"`
+}
+
+type SalePayment struct {
+	Amount float64 `json:"amount" bson:"amount"`
+	Method string  `json:"method" bson:"method"`
+}
+
+type Sale struct {
+	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Products []SaleProduct      `json:"products" bson:"products"`
+	Total    float64            `json:"total" bson:"total"`
+	VAT      float64            `json:"vat" bson:"vat"`
+	Discount float64            `json:"discount" bson:"discount"`
+	Paid     float64            `json:"paid" bson:"paid"`
+	Payments []SalePayment      `json:"payments" bson:"payments"`
 }
 
 // No in-memory sales; use MongoDB
@@ -61,8 +75,10 @@ func SalesHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error":"invalid input"}`))
 			return
 		}
-		// Calculate VAT (20% UK standard)
-		s.VAT = s.Total * 0.2
+		// Calculate VAT (20% UK standard) if not provided
+		if s.VAT == 0 {
+			s.VAT = s.Total * 0.2
+		}
 		coll, err := db.GetCollection("sales")
 		if err != nil {
 			log.Printf("db error: %v", err)
