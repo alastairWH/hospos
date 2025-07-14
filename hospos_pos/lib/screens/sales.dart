@@ -19,8 +19,8 @@ class _SalesScreenState extends State<SalesScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _cart = [];
   double get _cartSubtotal => _cart.fold(0.0, (sum, item) => sum + (item['price'] * item['qty']));
-  double get _cartTax => _cartSubtotal * 0.2; // 20% VAT
-  double get _cartTotal => _cartSubtotal + _cartTax;
+  double get _cartTax => _cartSubtotal * 0.2 / 1.2; // 20% VAT included
+  double get _cartTotal => _cartSubtotal;
 
   @override
   void initState() {
@@ -72,9 +72,9 @@ class _SalesScreenState extends State<SalesScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  // Products area (80%)
+                  // Categories/Products area (70%)
                   Expanded(
-                    flex: 4,
+                    flex: 7,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -150,9 +150,9 @@ class _SalesScreenState extends State<SalesScreen> {
                     ),
                   ),
                   const SizedBox(width: 24),
-                  // Cart area (20%)
+                  // Cart area (30%)
                   Expanded(
-                    flex: 1,
+                    flex: 3,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -180,12 +180,70 @@ class _SalesScreenState extends State<SalesScreen> {
                                         productName: item['name'],
                                         price: item['price'],
                                         qty: item['qty'],
+                                        onRemove: () {
+                                          setState(() {
+                                            final idx = _cart.indexWhere((cartItem) => cartItem['id'] == item['id']);
+                                            if (idx >= 0) {
+                                              if (_cart[idx]['qty'] > 1) {
+                                                _cart[idx]['qty'] -= 1;
+                                              } else {
+                                                _cart.removeAt(idx);
+                                              }
+                                            }
+                                          });
+                                        },
+                                        onEditQty: () async {
+                                          final idx = _cart.indexWhere((cartItem) => cartItem['id'] == item['id']);
+                                          if (idx >= 0) {
+                                            int newQty = _cart[idx]['qty'];
+                                            final result = await showDialog<int>(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  title: const Text('Change Quantity'),
+                                                  content: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Text('Current quantity: ${_cart[idx]['qty']}'),
+                                                      TextField(
+                                                        keyboardType: TextInputType.number,
+                                                        decoration: const InputDecoration(labelText: 'New quantity'),
+                                                        onChanged: (val) {
+                                                          newQty = int.tryParse(val) ?? newQty;
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      child: const Text('Cancel'),
+                                                      onPressed: () => Navigator.of(context).pop(null),
+                                                    ),
+                                                    ElevatedButton(
+                                                      child: const Text('Update'),
+                                                      onPressed: () => Navigator.of(context).pop(newQty),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                            if (result != null && result > 0) {
+                                              setState(() {
+                                                _cart[idx]['qty'] = result;
+                                              });
+                                            } else if (result == 0) {
+                                              setState(() {
+                                                _cart.removeAt(idx);
+                                              });
+                                            }
+                                          }
+                                        },
                                       )).toList(),
                                     ),
                             ),
                             const SizedBox(height: 12),
                             Text('Subtotal: £${_cartSubtotal.toStringAsFixed(2)}'),
-                            Text('Tax (20%): £${_cartTax.toStringAsFixed(2)}'),
+                            Text('VAT (included): £${_cartTax.toStringAsFixed(2)}'),
                             Text('Total: £${_cartTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 12),
                             ElevatedButton.icon(
@@ -277,7 +335,9 @@ class CartItemCard extends StatelessWidget {
   final String productName;
   final double price;
   final int qty;
-  const CartItemCard({Key? key, required this.productName, required this.price, required this.qty}) : super(key: key);
+  final VoidCallback? onRemove;
+  final VoidCallback? onEditQty;
+  const CartItemCard({Key? key, required this.productName, required this.price, required this.qty, this.onRemove, this.onEditQty}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +352,16 @@ class CartItemCard extends StatelessWidget {
             Text(productName, style: const TextStyle(fontWeight: FontWeight.w500)),
             Text('x$qty'),
             Text('£${price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              tooltip: 'Edit quantity',
+              onPressed: onEditQty,
+            ),
+            IconButton(
+              icon: const Icon(Icons.remove_circle, color: Colors.red),
+              tooltip: 'Remove',
+              onPressed: onRemove,
+            ),
           ],
         ),
       ),

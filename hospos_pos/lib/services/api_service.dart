@@ -12,8 +12,8 @@ class ApiService {
       final response = await http.get(Uri.parse('$_baseUrl/categories'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Assuming backend returns an array of category names
-        return List<String>.from(data);
+        // Map each object to its 'name' field
+        return List<String>.from(data.map((cat) => cat['name']));
       }
     } catch (_) {}
     return [];
