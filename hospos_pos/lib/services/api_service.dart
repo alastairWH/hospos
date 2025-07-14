@@ -78,7 +78,13 @@ class ApiService {
       final response = await http.get(Uri.parse('$_baseUrl/users'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data);
+        // Map _id to id if needed
+        return List<Map<String, dynamic>>.from(data).map((user) {
+          if (user['id'] == null && user['_id'] != null) {
+            user['id'] = user['_id'];
+          }
+          return user;
+        }).toList();
       }
     } catch (_) {}
     return [];
